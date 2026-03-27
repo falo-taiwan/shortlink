@@ -10,12 +10,15 @@
 - 意義：`v1.02`
 - `v103`
 - 意義：`v1.03`
+- `v104`
+- 意義：`v1.04`
 
 主檔：
 
 - [falo-shortlink-json-editor-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v101.html)
 - [falo-shortlink-json-editor-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v102.html)
 - [falo-shortlink-json-editor-v103.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v103.html)
+- [falo-shortlink-json-editor-v104.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v104.html)
 - [falo-shortlink-guide-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v101.html)
 - [falo-shortlink-guide-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v102.html)
 
@@ -31,12 +34,14 @@
   - 表格視角維護器
 - `falo-shortlink-json-editor-v103.html`
   - 防呆一致性維護器
+- `falo-shortlink-json-editor-v104.html`
+  - 操作優化維護器
 - `falo-shortlink-guide-v101.html`
   - v101 給人看的說明頁
 - `falo-shortlink-guide-v102.html`
   - v102 給人看的說明頁
 
-## v101 / v102 / v103 的差異
+## v101 / v102 / v103 / v104 的差異
 
 - `v101`
   - 比較像工程底稿 / JSON 對照版
@@ -49,12 +54,18 @@
   - 比較像防錯優先的資料層版本
   - 重點不在多功能，而在資料一致性
   - 補上操作者欄位、URL 自動補全、archive / delete 狀態、舊格式轉換與統一小寫
+- `v104`
+  - 延續 v103 的防呆規則
+  - 時間改成台北時間
+  - `archived` / `deleted` 後可直接按 `active` 恢復
+  - 把操作按鈕移到表格最左邊
 
 一句話理解：
 
 - `v101` = JSON 視角
 - `v102` = 表格視角
 - `v103` = 防呆一致性視角
+- `v104` = 操作優化視角
 
 用途：
 
@@ -93,7 +104,7 @@
 - 最好接 `404.html`
 - 後續升級成 GAS / JSON fallback 也容易
 
-`v103` 匯出格式：
+`v103` / `v104` 匯出格式：
 
 ```json
 {
@@ -120,6 +131,7 @@
   - `{ "123": "https://xxx" }`
   - 會自動轉成新格式
 - `404.html` 已同步升級成可吃舊格式與 `v103` 新格式
+- `v104` 的 `created_at / updated_at` 改用台北時間（`Asia/Taipei`）
 
 補充：
 
@@ -180,6 +192,11 @@
   - `archive` 與 `delete` 不做真刪除，只改 `status`
   - 匯入舊格式時會自動轉成新格式
   - 所有資料欄位都統一轉小寫後匯出
+- `v104`
+  - 延續 `v103` 的所有防呆規則
+  - 表格左邊就是操作按鈕
+  - `active / archive / delete` 都能直接點
+  - 時間欄位改成台北時間
 
 驗證規則：
 
@@ -201,6 +218,10 @@
 3. `v103`
    - 完成表格操作後，按 `匯出新的 links.json`
    - 匯出的會是新 object 格式
+4. `v104`
+   - 完成表格操作後，按 `匯出新的 links.json`
+   - 匯出的會是新 object 格式
+   - `created_at / updated_at` 一律使用台北時間
 
 匯出檔名會自動帶時間戳到「分」，例如：
 
@@ -250,11 +271,12 @@
 3. 若你想看資料契約與 JSON 對照，用 `v101`
 4. 若你想直接維護表格，用 `v102`
 5. 若你想優先降低錯誤率與統一格式，用 `v103`
-6. 完成新增 / 修改 / archive / delete
-7. 匯出新的 `links.json`
-8. 確認匯出內容沒問題
-9. 把下載好的檔案，手動覆蓋主站 repo root 的 `/links.json`
-10. 提交並部署主站
+6. 若你想在窄畫面下也更穩定操作，用 `v104`
+7. 完成新增 / 修改 / active / archive / delete
+8. 匯出新的 `links.json`
+9. 確認匯出內容沒問題
+10. 把下載好的檔案，手動覆蓋主站 repo root 的 `/links.json`
+11. 提交並部署主站
 
 如果你平常真的要維護，建議順序是：
 
@@ -265,9 +287,9 @@
 
 如果你現在要優先防錯，我更建議：
 
-1. 先打開 [falo-shortlink-json-editor-v103.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v103.html)
+1. 先打開 [falo-shortlink-json-editor-v104.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v104.html)
 2. 先設定操作者
-3. 再做新增、編輯、archive、delete
+3. 再做新增、編輯、active、archive、delete
 4. 匯出新的 `links.json`
 5. 再人工覆蓋 root 的 `links.json`
 
