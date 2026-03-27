@@ -1,10 +1,10 @@
 <!doctype html>
 <!--
-Project: Force Cheng × FALO Tools
-Tool: Shortlink Guide
-Version: v101
-Last Updated: 2026-03-28
-Copyright: © 2026 Force Cheng × FALO. All rights reserved.
+Project: FALO x Force Cheng Tools
+Tool: Shortlink GAS Editor
+Version: v106
+Last Updated: 2026-03-27 20:13 TPE
+Copyright: © 2026 FALO x Force Cheng. All rights reserved.
 Website: https://force.formosa-ai.com
 
 Design:
@@ -12,13 +12,18 @@ Design:
 - Local-first
 - Mobile-first
 - GitHub Pages ready
+
+Notes:
+- This version records a key finding from router testing: valid shortlinks can still fail when GAS lookup times out.
+- The main data is still Google Sheets via GAS, but router timeout settings directly affect real-world success rate.
+- v106 keeps the same editor workflow while making that timeout lesson explicit in the source comments.
 -->
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FALO Shortlink Guide v101 | shortlink v1 說明頁 | Force Cheng × FALO</title>
-  <meta name="description" content="FALO Shortlink Guide v101 說明 shortlink v1 的工作方式、links.json 格式、建議目錄結構、人工更新流程，以及後續升級到 GAS 的方向。">
+  <title>FALO Shortlink GAS Editor v106 | Google Sheet 維護版 | FALO x Force Cheng</title>
+  <meta name="description" content="FALO Shortlink GAS Editor v106 是 shortlink 的 Google Sheet 維護版，支援透過 GAS 讀取、建立、修改、archive、restore、delete、export snapshot 與 backup，並記錄這次 timeout 經驗。">
   <style>
     :root {
       --bg: #f7fbf6;
@@ -29,10 +34,12 @@ Design:
       --muted: #6a6f7b;
       --brand: #7cc8a2;
       --brand-deep: #5f6acb;
-      --accent: #f4e69a;
+      --danger: #b94f63;
+      --warn: #8a5d12;
+      --ok: #24704f;
       --shadow: 0 18px 40px rgba(77, 103, 96, 0.09);
       --radius: 20px;
-      --max-width: 920px;
+      --max-width: 1240px;
     }
 
     * { box-sizing: border-box; }
@@ -68,9 +75,21 @@ Design:
     }
 
     .hero,
-    .section-body {
+    .stack,
+    .section-box,
+    .preview-box,
+    .editor-box {
       display: grid;
       gap: 12px;
+    }
+
+    .section-box,
+    .preview-box,
+    .editor-box {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
     }
 
     .eyebrow {
@@ -86,12 +105,12 @@ Design:
       text-transform: uppercase;
     }
 
-    h1, h2, h3, p, pre {
+    h1, h2, p, pre {
       margin: 0;
     }
 
     h1 {
-      font-size: clamp(34px, 8vw, 50px);
+      font-size: clamp(34px, 8vw, 52px);
       line-height: 1;
       letter-spacing: -0.05em;
     }
@@ -102,11 +121,6 @@ Design:
       letter-spacing: -0.03em;
     }
 
-    h3 {
-      font-size: 17px;
-      line-height: 1.35;
-    }
-
     .lead {
       color: var(--brand-deep);
       font-size: 18px;
@@ -115,16 +129,23 @@ Design:
     }
 
     .helper,
-    .list,
-    .note {
+    .note,
+    .tiny,
+    .empty,
+    .status {
       color: var(--muted);
-      line-height: 1.8;
+      line-height: 1.7;
     }
 
-    .chips {
+    .chips,
+    .button-row,
+    .toolbar,
+    .meta-row,
+    .pagination {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
+      align-items: center;
     }
 
     .chip {
@@ -138,25 +159,223 @@ Design:
       font-weight: 700;
     }
 
-    .grid {
+    .layout {
       display: grid;
       gap: 18px;
     }
 
-    pre {
-      overflow: auto;
-      padding: 16px;
-      border-radius: 16px;
-      border: 1px solid var(--line);
-      background: #fff;
-      line-height: 1.7;
-      font-size: 13px;
-      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    .field-grid,
+    .operator-grid {
+      display: grid;
+      gap: 12px;
     }
 
-    .list {
+    label {
+      display: inline-block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    input[type="text"],
+    input[type="file"],
+    textarea,
+    select {
+      width: 100%;
+      font: inherit;
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    input[type="file"] {
+      padding: 10px 12px;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .password-row {
       display: grid;
-      gap: 6px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.6;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+
+    .button,
+    .button-secondary,
+    .button-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 15px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 160ms ease;
+    }
+
+    .button:hover,
+    .button-secondary:hover,
+    .button-danger:hover {
+      transform: translateY(-1px);
+    }
+
+    .button {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+      box-shadow: 0 12px 28px rgba(95, 106, 203, 0.16);
+    }
+
+    .button-secondary {
+      color: var(--text);
+      background: #fff;
+      border-color: var(--line);
+    }
+
+    .button-danger {
+      color: var(--danger);
+      background: rgba(185, 79, 99, 0.08);
+      border-color: rgba(185, 79, 99, 0.18);
+    }
+
+    .status {
+      min-height: 24px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status[data-tone="ok"] { color: var(--ok); }
+    .status[data-tone="warn"] { color: var(--warn); }
+    .status[data-tone="error"] { color: var(--danger); }
+
+    .inline-status {
+      min-height: 22px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .inline-status[data-tone="ok"] { color: var(--ok); }
+    .inline-status[data-tone="warn"] { color: var(--warn); }
+    .inline-status[data-tone="error"] { color: var(--danger); }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1040px;
+    }
+
+    th,
+    td {
+      padding: 14px 12px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+
+    th {
+      background: #fdfefe;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tr.is-selected {
+      background: rgba(124, 200, 162, 0.08);
+    }
+
+    .url-cell,
+    .meta-cell {
+      word-break: break-all;
+    }
+
+    .meta-row {
+      justify-content: space-between;
+    }
+
+    .badge {
+      display: inline-flex;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: lowercase;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .badge[data-status="active"] {
+      color: var(--ok);
+      background: rgba(36, 112, 79, 0.08);
+      border-color: rgba(36, 112, 79, 0.18);
+    }
+
+    .badge[data-status="archived"] {
+      color: var(--warn);
+      background: rgba(138, 93, 18, 0.08);
+      border-color: rgba(138, 93, 18, 0.18);
+    }
+
+    .badge[data-status="deleted"] {
+      color: var(--danger);
+      background: rgba(185, 79, 99, 0.08);
+      border-color: rgba(185, 79, 99, 0.18);
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 14px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    footer {
+      padding: 0 0 28px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--muted);
     }
 
     .footer-link {
@@ -168,15 +387,7 @@ Design:
       text-decoration: underline;
     }
 
-    footer {
-      padding: 0 0 28px;
-      text-align: center;
-      font-size: 12px;
-      line-height: 1.8;
-      color: var(--muted);
-    }
-
-    @media (min-width: 860px) {
+    @media (min-width: 960px) {
       .page,
       footer {
         width: min(var(--max-width), calc(100% - 40px));
@@ -186,7 +397,16 @@ Design:
         padding-top: 30px;
       }
 
-      .grid {
+      .layout {
+        grid-template-columns: minmax(0, 1.5fr) minmax(360px, 0.9fr);
+        align-items: start;
+      }
+
+      .field-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .operator-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -195,111 +415,996 @@ Design:
 <body>
   <main class="page">
     <section class="panel hero">
-      <div class="eyebrow">Single File HTML · v101</div>
-      <h1>短網址 v1 說明頁</h1>
-      <p class="lead">這一版不是短網址服務，而是先把 shortlink 的資料結構、維護流程與 GitHub Pages routing 路線定下來。</p>
-      <p class="helper">你可以把它理解成：`links.json` 是資料表，`404.html` 是 router，`/go/&lt;slug&gt;` 是對外入口，而 `shortlink JSON editor` 是人實際會操作的維護工具。</p>
+      <div class="eyebrow">Single File HTML · v106</div>
+      <h1>短網址 GAS 維護器</h1>
+      <p class="lead">v106 延續 GAS 直連維護流程，並把這次 timeout 的系統發現正式記錄下來。</p>
+      <p class="helper">這一版的重點不是重做流程，而是把「主資料有在、但查詢 timeout 還是會失敗」這件事明確寫進工具版本。資料主來源仍然是 GAS / Sheet，snapshot 匯出仍是輔助。</p>
       <div class="chips">
-        <span class="chip">shortlink v1</span>
-        <span class="chip">links.json</span>
-        <span class="chip">GitHub Pages ready</span>
+        <span class="chip">GAS 直連</span>
+        <span class="chip">Google Sheet 主資料源</span>
+        <span class="chip">snapshot / backup</span>
       </div>
     </section>
 
-    <section class="grid">
-      <section class="panel section-body">
-        <h2>這是什麼工具</h2>
-        <p class="helper">這套 shortlink v1 不是重系統，也沒有後台。它先用最小做法，把短網址維護拆成兩層：</p>
-        <div class="list">
-          <div>1. `links.json`：負責存放 slug 與 target URL。</div>
-          <div>2. `404.html`：負責接管 `/go/&lt;slug&gt;` 並查表 redirect。</div>
+    <section class="layout">
+      <section class="panel stack">
+        <div class="section-box">
+          <h2>連線設定</h2>
+          <div class="operator-grid">
+            <div>
+              <label for="operator-select">預設操作者</label>
+              <select id="operator-select">
+                <option value="force">force</option>
+                <option value="goma">goma</option>
+                <option value="terra">terra</option>
+              </select>
+            </div>
+            <div>
+              <label for="operator-input">手動輸入操作者</label>
+              <input id="operator-input" type="text" placeholder="留空則使用左側選擇">
+            </div>
+            <div>
+              <label for="password-input">管理密碼</label>
+              <div class="password-row">
+                <input id="password-input" type="password" placeholder="例如：123">
+                <button class="button-secondary" id="toggle-password-btn" type="button">顯示</button>
+              </div>
+            </div>
+            <div>
+              <label for="gas-url-input">GAS Web App URL</label>
+              <input id="gas-url-input" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+            </div>
+          </div>
+          <div class="button-row">
+            <button class="button" id="load-gas-btn" type="button">讀取 Google Sheet</button>
+            <button class="button-secondary" id="backup-btn" type="button">執行 backup_now</button>
+            <span class="inline-status" id="connection-status-inline" data-tone="warn"></span>
+          </div>
+          <p class="note">這一版會把操作者與密碼送到 GAS admin API。Google 帳號白名單可留待下一版，現在先用簡單密碼模式。</p>
         </div>
-        <p class="helper">這樣的好處是簡單、穩定、好教，也很適合放在 GitHub Pages 上先驗證整體路線。</p>
+
+        <div class="section-box">
+          <h2>新增一筆到 Google Sheet</h2>
+          <div class="field-grid">
+            <div>
+              <label for="new-slug">新 slug</label>
+              <input id="new-slug" type="text" placeholder="例如：demo">
+            </div>
+            <div>
+              <label for="new-url">新 target URL</label>
+              <input id="new-url" type="text" placeholder="example.com/landing">
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <label for="new-note">note</label>
+              <input id="new-note" type="text" placeholder="例如：campaign / owner / 備註">
+            </div>
+          </div>
+          <div class="button-row">
+            <button class="button" id="add-btn" type="button">新增到 Google Sheet</button>
+            <span class="inline-status" id="add-status-inline" data-tone="warn"></span>
+          </div>
+          <p class="note">若網址未填 `http://` 或 `https://`，系統會自動補上 `http://`。成功後會直接寫入 Google Sheet，然後重新讀回表格。</p>
+        </div>
+
+        <div class="section-box">
+          <div class="meta-row">
+            <h2>資料表</h2>
+            <span class="tiny" id="source-label">資料來源：尚未連線</span>
+          </div>
+
+          <div class="toolbar">
+            <button class="button-secondary" id="reload-btn" type="button">重新讀取 GAS</button>
+            <button class="button-secondary" id="export-btn" type="button">匯出 snapshot JSON</button>
+            <span class="inline-status" id="table-status-inline" data-tone="warn"></span>
+          </div>
+
+          <div>
+            <label for="json-file">手動上傳 `links.json`（離線 fallback）</label>
+            <input id="json-file" type="file" accept="application/json,.json">
+            <p class="note">主模式是讀取 GAS。若暫時不能連線，也可手動上傳 `links.json` 做 fallback 參考。</p>
+          </div>
+
+          <div class="meta-row">
+            <div class="toolbar">
+              <label for="sort-field">排序欄位</label>
+              <select id="sort-field">
+                <option value="slug">slug</option>
+                <option value="target_url">target_url</option>
+                <option value="status">status</option>
+                <option value="updated_at">updated_at</option>
+              </select>
+              <button class="button-secondary" id="sort-order-btn" type="button">目前：升冪</button>
+            </div>
+            <span class="tiny" id="summary-text">目前 0 筆</span>
+          </div>
+
+          <div>
+            <label for="search-input">關鍵字搜尋</label>
+            <input id="search-input" type="text" placeholder="主要搜尋網址，也可搜 slug / note">
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>操作</th>
+                  <th>slug</th>
+                  <th>target_url</th>
+                  <th>status</th>
+                  <th>note</th>
+                  <th>updated_by / updated_at</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+
+          <p class="empty" id="empty-state" hidden>目前沒有資料。請先讀取 GAS，或改用手動上傳 JSON 做 fallback。</p>
+
+          <div class="pagination">
+            <button class="button-secondary" id="prev-page-btn" type="button">上一頁</button>
+            <span class="tiny" id="page-text">第 1 頁 / 共 1 頁</span>
+            <button class="button-secondary" id="next-page-btn" type="button">下一頁</button>
+          </div>
+        </div>
       </section>
 
-      <section class="panel section-body">
-        <h2>v1 工作方式</h2>
-        <div class="list">
-          <div>1. 在 shortlink editor 中讀取或上傳 `links.json`。</div>
-          <div>2. 新增、修改、刪除 slug 與 target URL。</div>
-          <div>3. 匯出新的 `links.json`。</div>
-          <div>4. 人工覆蓋到主站 repo root。</div>
-          <div>5. 之後由 `404.html` 讀取 `links.json`，處理 `/go/&lt;slug&gt;`。</div>
+      <section class="panel stack">
+        <div class="editor-box">
+          <h2>編輯選取列</h2>
+          <p class="note">先按表格中的 `編輯`。`archive / delete / restore` 都會直接送到 GAS，再由 GAS 更新 Google Sheet。</p>
+          <div>
+            <label for="edit-slug">slug</label>
+            <input id="edit-slug" type="text" placeholder="請先從左側選一列">
+          </div>
+          <div>
+            <label for="edit-url">target_url</label>
+            <input id="edit-url" type="text" placeholder="example.com/path">
+          </div>
+          <div>
+            <label for="edit-note">note</label>
+            <input id="edit-note" type="text" placeholder="可修改備註">
+          </div>
+          <div>
+            <label for="edit-status">status</label>
+            <select id="edit-status">
+              <option value="active">active</option>
+              <option value="archived">archived</option>
+              <option value="deleted">deleted</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button class="button-secondary" id="active-btn" type="button">active</button>
+            <button class="button-secondary" id="archive-btn" type="button">archive</button>
+            <button class="button-danger" id="delete-btn" type="button">delete</button>
+            <button class="button" id="save-edit-btn" type="button">儲存到 Google Sheet</button>
+            <button class="button-secondary" id="cancel-edit-btn" type="button">取消編輯</button>
+            <span class="inline-status" id="edit-status-inline" data-tone="warn"></span>
+          </div>
+          <p class="tiny" id="edit-target-label">目前未選取任何列。</p>
+        </div>
+
+        <div class="preview-box">
+          <h2>snapshot 預覽</h2>
+          <p class="note">這裡顯示目前表格可對應出的 snapshot 預覽。按下匯出時，會直接呼叫 GAS `export_snapshot`。</p>
+          <div class="status" id="status" data-tone="warn">請先輸入操作者、密碼與 GAS URL，然後讀取 Google Sheet。</div>
+          <details>
+            <summary>展開 snapshot 預覽</summary>
+            <textarea id="json-preview" readonly spellcheck="false"></textarea>
+          </details>
         </div>
       </section>
-    </section>
-
-    <section class="panel section-body">
-      <h2>links.json 範例格式</h2>
-      <p class="helper">v1 先固定成最簡字串對字串，不先做 title、note、status、tags。這是故意的，因為第一步要先把資料面與 router 介面穩住。</p>
-      <pre>{
-  "123": "https://www.google.com/",
-  "demo": "https://force.formosa-ai.com",
-  "force": "https://force.formosa-ai.com/about/",
-  "qrcode": "https://falo-taiwan.github.io/tools/qrcode/falo-qrcode-v102.html",
-  "shortlink": "https://falo-taiwan.github.io/tools/shortlink/falo-shortlink-json-editor-v101.html"
-}</pre>
-    </section>
-
-    <section class="panel section-body">
-      <h2>建議目錄結構</h2>
-      <p class="helper">主站 repo 是 `falo-taiwan.github.io`。v1 建議這樣放，之後人工更新時最直覺：</p>
-      <pre>/
-├─ 404.html
-├─ links.json
-├─ /go/
-│   └─ （未來 shortlink 入口路徑）
-├─ /tools/
-│   ├─ /qrcode/
-│   │   ├─ falo-qrcode-v102.html
-│   │   └─ README.md
-│   └─ /shortlink/
-│       ├─ falo-shortlink-json-editor-v101.html
-│       ├─ falo-shortlink-guide-v101.html
-│       └─ README.md</pre>
-      <p class="note">重點是 `links.json` 與 `404.html` 都放在 repo root，這樣 router 後續就能直接吃同一份資料。</p>
-    </section>
-
-    <section class="grid">
-      <section class="panel section-body">
-        <h2>人工更新流程</h2>
-        <div class="list">
-          <div>1. 打開 `falo-shortlink-json-editor-v101.html`。</div>
-          <div>2. 先嘗試自動讀取預設 `links.json`。</div>
-          <div>3. 如果失敗，就手動上傳既有 `links.json`。</div>
-          <div>4. 完成新增、修改、刪除。</div>
-          <div>5. 匯出新的 `links.json`。</div>
-          <div>6. 人工覆蓋主站 repo root 的 `links.json`。</div>
-          <div>7. 重新部署後，新的 `/go/&lt;slug&gt;` 對應就會生效。</div>
-        </div>
-      </section>
-
-      <section class="panel section-body">
-        <h2>未來如何升級到 GAS</h2>
-        <p class="helper">v2 再把資料來源升級成 `GAS + JSON fallback`。也就是：</p>
-        <div class="list">
-          <div>1. 正式維護來源改成 GAS。</div>
-          <div>2. `404.html` 先嘗試拿 GAS 指令。</div>
-          <div>3. 若 GAS timeout、格式錯、沒有 target，就 fallback 改吃 root 的 `links.json`。</div>
-        </div>
-        <p class="helper">這樣 v1 的 `links.json` 不會浪費，而會變成後續系統的保底層。</p>
-      </section>
-    </section>
-
-    <section class="panel section-body">
-      <h2>這一版的限制</h2>
-      <div class="list">
-        <div>1. 沒有自動寫回 GitHub，仍需人工覆蓋 `links.json`。</div>
-        <div>2. 沒有 GAS、Google Sheet、登入與權限控管。</div>
-        <div>3. 沒有批量產生 `/go/&lt;slug&gt;/index.html` 靜態頁。</div>
-        <div>4. 沒有多語系與 SEO 強化，這一版先專注在資料面。</div>
-      </div>
     </section>
   </main>
 
   <footer>
-    © 2026 Force Cheng × FALO. All rights reserved.<br>
+    © 2026 FALO x Force Cheng. All rights reserved.<br>
     <a class="footer-link" href="https://force.formosa-ai.com">Force Cheng Web : https://force.formosa-ai.com</a>
   </footer>
+
+  <script>
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbylx91OxTOiYUicQcGNxIUWarbswCg0yBcHj5vzMfJRE2fFKStd4USdNuN8dWoM2x1qJA/exec";
+    const PAGE_SIZE = 10;
+    const OPERATOR_OPTIONS = ["force", "goma", "terra"];
+
+    const fileInput = document.getElementById("json-file");
+    const addButton = document.getElementById("add-btn");
+    const reloadButton = document.getElementById("reload-btn");
+    const exportButton = document.getElementById("export-btn");
+    const loadGasButton = document.getElementById("load-gas-btn");
+    const backupButton = document.getElementById("backup-btn");
+    const togglePasswordButton = document.getElementById("toggle-password-btn");
+    const sortFieldSelect = document.getElementById("sort-field");
+    const sortOrderButton = document.getElementById("sort-order-btn");
+    const searchInput = document.getElementById("search-input");
+    const tableBody = document.getElementById("table-body");
+    const emptyState = document.getElementById("empty-state");
+    const pageText = document.getElementById("page-text");
+    const prevPageButton = document.getElementById("prev-page-btn");
+    const nextPageButton = document.getElementById("next-page-btn");
+    const summaryText = document.getElementById("summary-text");
+    const sourceLabel = document.getElementById("source-label");
+    const statusText = document.getElementById("status");
+    const connectionInlineStatus = document.getElementById("connection-status-inline");
+    const addInlineStatus = document.getElementById("add-status-inline");
+    const tableInlineStatus = document.getElementById("table-status-inline");
+    const editInlineStatus = document.getElementById("edit-status-inline");
+    const jsonPreview = document.getElementById("json-preview");
+    const operatorSelect = document.getElementById("operator-select");
+    const operatorInput = document.getElementById("operator-input");
+    const passwordInput = document.getElementById("password-input");
+    const gasUrlInput = document.getElementById("gas-url-input");
+    const newSlugInput = document.getElementById("new-slug");
+    const newUrlInput = document.getElementById("new-url");
+    const newNoteInput = document.getElementById("new-note");
+    const editSlugInput = document.getElementById("edit-slug");
+    const editUrlInput = document.getElementById("edit-url");
+    const editNoteInput = document.getElementById("edit-note");
+    const editStatusSelect = document.getElementById("edit-status");
+    const activeButton = document.getElementById("active-btn");
+    const saveEditButton = document.getElementById("save-edit-btn");
+    const archiveButton = document.getElementById("archive-btn");
+    const deleteButton = document.getElementById("delete-btn");
+    const cancelEditButton = document.getElementById("cancel-edit-btn");
+    const editTargetLabel = document.getElementById("edit-target-label");
+
+    const state = {
+      nextId: 1,
+      entries: [],
+      source: "gas",
+      sortField: "updated_at",
+      sortOrder: "desc",
+      searchTerm: "",
+      page: 1,
+      selectedId: null
+    };
+
+    function setStatus(message, tone) {
+      statusText.textContent = message;
+      statusText.dataset.tone = tone || "warn";
+    }
+
+    function setInlineStatus(element, message, tone) {
+      if (!element) {
+        return;
+      }
+      element.textContent = message || "";
+      element.dataset.tone = tone || "warn";
+    }
+
+    function clearInlineStatuses() {
+      setInlineStatus(connectionInlineStatus, "", "warn");
+      setInlineStatus(addInlineStatus, "", "warn");
+      setInlineStatus(tableInlineStatus, "", "warn");
+      setInlineStatus(editInlineStatus, "", "warn");
+    }
+
+    function setSourceLabel(message) {
+      sourceLabel.textContent = "資料來源：" + message;
+    }
+
+    function getTaipeiNowParts() {
+      const formatter = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "Asia/Taipei",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      });
+      const lookup = {};
+      formatter.formatToParts(new Date()).forEach(function(part) {
+        if (part.type !== "literal") {
+          lookup[part.type] = part.value;
+        }
+      });
+      return lookup;
+    }
+
+    function getTaipeiTimestamp() {
+      const now = getTaipeiNowParts();
+      return (now.year + "-" + now.month + "-" + now.day + "t" + now.hour + ":" + now.minute + ":" + now.second + "+08:00").toLowerCase();
+    }
+
+    function buildTimestampedFilename() {
+      const now = getTaipeiNowParts();
+      return "links-" + now.year + now.month + now.day + "-" + now.hour + now.minute + ".json";
+    }
+
+    function normalizeLower(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function normalizeFreeText(value) {
+      return String(value || "").trim();
+    }
+
+    function getCurrentOperator() {
+      const typed = normalizeLower(operatorInput.value);
+      if (typed) {
+        return typed;
+      }
+      return normalizeLower(operatorSelect.value || OPERATOR_OPTIONS[0]);
+    }
+
+    function getCurrentPassword() {
+      return String(passwordInput.value || "").trim();
+    }
+
+    function getGasUrl() {
+      return String(gasUrlInput.value || "").trim();
+    }
+
+    function ensureAdminReady() {
+      const operator = getCurrentOperator();
+      const password = getCurrentPassword();
+      const gasUrl = getGasUrl();
+
+      if (!operator) {
+        throw new Error("請先輸入操作者。");
+      }
+      if (!password) {
+        throw new Error("請先輸入管理密碼。");
+      }
+      if (!gasUrl) {
+        throw new Error("請先輸入 GAS Web App URL。");
+      }
+
+      return { operator, password, gasUrl };
+    }
+
+    function ensureProtocol(rawUrl) {
+      const lowered = normalizeLower(rawUrl);
+      if (!lowered) {
+        return { url: "", didAppend: false };
+      }
+      if (lowered.startsWith("http://") || lowered.startsWith("https://")) {
+        return { url: lowered, didAppend: false };
+      }
+      return { url: "http://" + lowered, didAppend: true };
+    }
+
+    function validateUrl(url) {
+      try {
+        const parsed = new URL(url);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function validateSlug(slug, ignoreId) {
+      if (!slug) {
+        return "slug 不可空白。";
+      }
+      if (!/^[a-z0-9_-]+$/.test(slug)) {
+        return "slug 只接受英數、底線 `_`、連字號 `-`。";
+      }
+      const exists = state.entries.some(function(entry) {
+        return entry.id !== ignoreId && entry.slug === slug;
+      });
+      if (exists) {
+        return "slug 不可重複。";
+      }
+      return "";
+    }
+
+    function validateStatus(status) {
+      const normalized = normalizeLower(status);
+      if (["active", "archived", "deleted"].includes(normalized)) {
+        return "";
+      }
+      return "status 只接受 active / archived / deleted。";
+    }
+
+    function createEntry(record) {
+      const entry = {
+        id: state.nextId++,
+        slug: record.slug,
+        target_url: record.target_url,
+        status: record.status,
+        note: record.note || "",
+        created_at: record.created_at,
+        created_by: record.created_by,
+        updated_at: record.updated_at,
+        updated_by: record.updated_by
+      };
+      state.entries.push(entry);
+      return entry;
+    }
+
+    function replaceEntries(records) {
+      state.entries = [];
+      state.nextId = 1;
+      records.forEach(createEntry);
+      state.page = 1;
+      state.selectedId = null;
+      render();
+    }
+
+    function makeRecord(slug, targetUrl, operator, status, createdAt, createdBy, updatedAt, updatedBy, note) {
+      return {
+        slug: normalizeLower(slug),
+        target_url: normalizeLower(targetUrl),
+        status: normalizeLower(status || "active"),
+        note: normalizeFreeText(note || ""),
+        created_at: normalizeLower(createdAt || getTaipeiTimestamp()),
+        created_by: normalizeLower(createdBy || operator),
+        updated_at: normalizeLower(updatedAt || getTaipeiTimestamp()),
+        updated_by: normalizeLower(updatedBy || operator)
+      };
+    }
+
+    function buildStarterRecords() {
+      const operator = "force";
+      const timestamp = getTaipeiTimestamp();
+      return [
+        makeRecord("123", "https://www.google.com/", operator, "active", timestamp, operator, timestamp, operator, "sample"),
+        makeRecord("demo", "https://force.formosa-ai.com", operator, "active", timestamp, operator, timestamp, operator, "sample"),
+        makeRecord("force", "https://force.formosa-ai.com/about/", operator, "active", timestamp, operator, timestamp, operator, "sample")
+      ];
+    }
+
+    function convertImportedObjectToRecords(raw, operator) {
+      const now = getTaipeiTimestamp();
+      const records = [];
+
+      Object.keys(raw).forEach(function(key) {
+        const value = raw[key];
+
+        if (typeof value === "string") {
+          const normalized = ensureProtocol(value);
+          records.push(makeRecord(key, normalized.url, operator, "active", now, operator, now, operator, ""));
+          return;
+        }
+
+        if (!value || typeof value !== "object" || Array.isArray(value)) {
+          throw new Error("每一筆資料必須是字串 URL 或 object。");
+        }
+
+        const normalized = ensureProtocol(value.target_url || "");
+        records.push(makeRecord(
+          key,
+          normalized.url,
+          value.created_by || operator,
+          value.status || "active",
+          value.created_at || now,
+          value.created_by || operator,
+          value.updated_at || now,
+          value.updated_by || operator,
+          value.note || ""
+        ));
+      });
+
+      return records;
+    }
+
+    function buildExportObject() {
+      const output = {};
+      for (const entry of state.entries) {
+        const normalized = ensureProtocol(entry.target_url);
+        if (!entry.slug || !validateUrl(normalized.url) || normalizeLower(entry.status) !== "active") {
+          continue;
+        }
+        output[entry.slug] = {
+          target_url: normalized.url,
+          status: normalizeLower(entry.status),
+          created_at: entry.created_at,
+          created_by: normalizeLower(entry.created_by),
+          updated_at: entry.updated_at,
+          updated_by: normalizeLower(entry.updated_by)
+        };
+      }
+      return output;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function getSortedEntries() {
+      const searchTerm = normalizeLower(state.searchTerm);
+      const key = state.sortField;
+      const orderFactor = state.sortOrder === "asc" ? 1 : -1;
+      return state.entries.filter(function(entry) {
+        if (!searchTerm) {
+          return true;
+        }
+        return [
+          entry.target_url,
+          entry.slug,
+          entry.note,
+          entry.updated_by
+        ].some(function(value) {
+          return normalizeLower(value).includes(searchTerm);
+        });
+      }).sort(function(a, b) {
+        const left = normalizeLower(a[key]);
+        const right = normalizeLower(b[key]);
+        if (left < right) return -1 * orderFactor;
+        if (left > right) return 1 * orderFactor;
+        return 0;
+      });
+    }
+
+    function getPageCount() {
+      return Math.max(1, Math.ceil(getSortedEntries().length / PAGE_SIZE));
+    }
+
+    function getVisibleEntries() {
+      const sorted = getSortedEntries();
+      const pageCount = getPageCount();
+      if (state.page > pageCount) {
+        state.page = pageCount;
+      }
+      const start = (state.page - 1) * PAGE_SIZE;
+      return sorted.slice(start, start + PAGE_SIZE);
+    }
+
+    function renderTable() {
+      const visible = getVisibleEntries();
+      tableBody.innerHTML = "";
+
+      visible.forEach(function(entry) {
+        const row = document.createElement("tr");
+        if (entry.id === state.selectedId) {
+          row.className = "is-selected";
+        }
+
+        row.innerHTML = [
+          '<td><div class="button-row">' +
+            '<button class="button-secondary" type="button" data-edit-id="' + entry.id + '">編輯</button>' +
+            '<button class="button-secondary" type="button" data-active-id="' + entry.id + '">active</button>' +
+            '<button class="button-secondary" type="button" data-archive-id="' + entry.id + '">archive</button>' +
+            '<button class="button-danger" type="button" data-delete-id="' + entry.id + '">delete</button>' +
+          '</div></td>',
+          '<td><strong>' + escapeHtml(entry.slug) + '</strong></td>',
+          '<td class="url-cell">' + escapeHtml(entry.target_url) + '</td>',
+          '<td><span class="badge" data-status="' + escapeHtml(entry.status) + '">' + escapeHtml(entry.status) + '</span></td>',
+          '<td class="meta-cell">' + escapeHtml(entry.note || "") + '</td>',
+          '<td class="meta-cell">' + escapeHtml(entry.updated_by) + '<br>' + escapeHtml(entry.updated_at) + '</td>'
+        ].join("");
+
+        tableBody.appendChild(row);
+
+        row.querySelector("[data-edit-id]").addEventListener("click", function() { selectEntry(entry.id); });
+        row.querySelector("[data-active-id]").addEventListener("click", function() { runStatusAction(entry, "restore", "active"); });
+        row.querySelector("[data-archive-id]").addEventListener("click", function() { runStatusAction(entry, "archive", "archived"); });
+        row.querySelector("[data-delete-id]").addEventListener("click", function() { runStatusAction(entry, "delete", "deleted"); });
+      });
+
+      emptyState.hidden = state.entries.length > 0;
+    }
+
+    function renderPagination() {
+      const pageCount = getPageCount();
+      pageText.textContent = "第 " + state.page + " 頁 / 共 " + pageCount + " 頁";
+      prevPageButton.disabled = state.page <= 1;
+      nextPageButton.disabled = state.page >= pageCount;
+    }
+
+    function renderSummary() {
+      const filteredCount = getSortedEntries().length;
+      summaryText.textContent = "目前 " + filteredCount + " / " + state.entries.length + " 筆";
+      sortOrderButton.textContent = "目前：" + (state.sortOrder === "asc" ? "升冪" : "降冪");
+    }
+
+    function renderPreview() {
+      jsonPreview.value = JSON.stringify(buildExportObject(), null, 2);
+    }
+
+    function renderEditor() {
+      const selected = state.entries.find(function(entry) {
+        return entry.id === state.selectedId;
+      });
+
+      if (!selected) {
+        editSlugInput.value = "";
+        editUrlInput.value = "";
+        editNoteInput.value = "";
+        editStatusSelect.value = "active";
+        editTargetLabel.textContent = "目前未選取任何列。";
+        return;
+      }
+
+      editSlugInput.value = selected.slug;
+      editUrlInput.value = selected.target_url;
+      editNoteInput.value = selected.note || "";
+      editStatusSelect.value = selected.status;
+      editTargetLabel.textContent = "目前編輯：" + selected.slug;
+    }
+
+    function render() {
+      renderSummary();
+      renderTable();
+      renderPagination();
+      renderEditor();
+      renderPreview();
+    }
+
+    function selectEntry(entryId) {
+      state.selectedId = entryId;
+      render();
+      editSlugInput.focus();
+      setStatus("已選取一列，可在右側編輯後送到 Google Sheet。", "warn");
+    }
+
+    function getSelectedEntry() {
+      return state.entries.find(function(entry) {
+        return entry.id === state.selectedId;
+      });
+    }
+
+    function downloadTextFile(filename, content) {
+      const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      window.setTimeout(function() {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }
+
+    async function callGas(action, payload) {
+      const auth = ensureAdminReady();
+      const response = await fetch(auth.gasUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(Object.assign({}, payload || {}, {
+          action: action,
+          operator: auth.operator,
+          password: auth.password
+        }))
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      if (!data || typeof data !== "object") {
+        throw new Error("GAS 回應格式錯誤。");
+      }
+      if (String(data.status || "").toLowerCase() !== "ok") {
+        throw new Error(data.message || "GAS 動作失敗。");
+      }
+
+      return data;
+    }
+
+    async function loadFromGas() {
+      try {
+        setStatus("正在從 GAS 讀取 Google Sheet。", "warn");
+        setInlineStatus(connectionInlineStatus, "正在讀取 Google Sheet...", "warn");
+        setInlineStatus(tableInlineStatus, "正在同步表格資料...", "warn");
+        const data = await callGas("admin_list");
+        const records = (data.records || []).map(function(record) {
+          return makeRecord(
+            record.slug || "",
+            record.target_url || "",
+            record.created_by || getCurrentOperator(),
+            record.status || "active",
+            record.created_at || getTaipeiTimestamp(),
+            record.created_by || getCurrentOperator(),
+            record.updated_at || getTaipeiTimestamp(),
+            record.updated_by || getCurrentOperator(),
+            record.note || ""
+          );
+        });
+
+        replaceEntries(records);
+        state.source = "gas";
+        setSourceLabel("Google Sheet（透過 GAS）");
+        setStatus("已從 Google Sheet 載入 " + records.length + " 筆資料。", "ok");
+        setInlineStatus(connectionInlineStatus, "讀取完成。", "ok");
+        setInlineStatus(tableInlineStatus, "表格已更新。", "ok");
+      } catch (error) {
+        setStatus("讀取 GAS 失敗：" + error.message, "error");
+        setInlineStatus(connectionInlineStatus, "讀取失敗：" + error.message, "error");
+        setInlineStatus(tableInlineStatus, "表格尚未更新。", "error");
+      }
+    }
+
+    async function tryFetchJson(url) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      return response.json();
+    }
+
+    function getDefaultJsonCandidates() {
+      const candidates = [];
+      if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+        candidates.push("/links.json");
+      }
+      candidates.push(new URL("../../links.json", window.location.href).href);
+      return candidates;
+    }
+
+    async function loadDefaultJson() {
+      setStatus("正在嘗試讀取 fallback links.json。", "warn");
+      setSourceLabel("fallback 讀取中");
+
+      const candidates = getDefaultJsonCandidates();
+      for (const candidate of candidates) {
+        try {
+          const parsed = await tryFetchJson(candidate);
+          const validated = convertImportedObjectToRecords(parsed, getCurrentOperator());
+          replaceEntries(validated);
+          state.source = "fallback";
+          setSourceLabel("fallback links.json");
+          setStatus("已讀取 fallback links.json。這一份只作為暫時參考，不會直接寫回 Google Sheet。", "warn");
+          return;
+        } catch (error) {
+          continue;
+        }
+      }
+
+      replaceEntries(buildStarterRecords());
+      state.source = "sample";
+      setSourceLabel("內建 sample");
+      setStatus("目前尚未連上 GAS，也讀不到 fallback links.json，所以先載入 sample。", "warn");
+    }
+
+    async function runStatusAction(entry, action, nextStatusLabel) {
+      try {
+        const confirmed = window.confirm("確定要把 `" + entry.slug + "` 設成 `" + nextStatusLabel + "` 嗎？");
+        if (!confirmed) {
+          return;
+        }
+        await callGas(action, {
+          slug: entry.slug,
+          note: entry.note || ""
+        });
+        await loadFromGas();
+        setStatus("已把 `" + entry.slug + "` 更新為 `" + nextStatusLabel + "`。", "ok");
+      } catch (error) {
+        setStatus(nextStatusLabel + " 失敗：" + error.message, "error");
+      }
+    }
+
+    fileInput.addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(loadEvent) {
+        try {
+          const parsed = JSON.parse(loadEvent.target.result);
+          replaceEntries(convertImportedObjectToRecords(parsed, getCurrentOperator()));
+          state.source = "upload";
+          setSourceLabel("手動上傳 JSON");
+          setStatus("已匯入本地 JSON。這份資料目前只在頁面中，不會自動寫回 Google Sheet。", "ok");
+          setInlineStatus(tableInlineStatus, "已載入本地 JSON。", "ok");
+        } catch (error) {
+          setStatus("匯入失敗：" + error.message, "error");
+          setInlineStatus(tableInlineStatus, "匯入失敗：" + error.message, "error");
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    });
+
+    addButton.addEventListener("click", function() {
+      const slug = normalizeLower(newSlugInput.value);
+      const note = normalizeFreeText(newNoteInput.value);
+      const slugError = validateSlug(slug, null);
+
+      if (slugError) {
+        setStatus("無法新增：" + slugError, "error");
+        newSlugInput.focus();
+        return;
+      }
+
+      const normalized = ensureProtocol(newUrlInput.value);
+      if (!normalized.url || !validateUrl(normalized.url)) {
+        setStatus("無法新增：target_url 必須是合法網址。", "error");
+        setInlineStatus(addInlineStatus, "新增失敗：網址格式不正確。", "error");
+        newUrlInput.focus();
+        return;
+      }
+
+      setInlineStatus(addInlineStatus, "正在寫入 Google Sheet...", "warn");
+      callGas("create", {
+        slug: slug,
+        target_url: normalized.url,
+        note: note
+      }).then(function() {
+        newSlugInput.value = "";
+        newUrlInput.value = "";
+        newNoteInput.value = "";
+        return loadFromGas();
+      }).then(function() {
+        setStatus("已新增 `" + slug + "` 到 Google Sheet。", "ok");
+        setInlineStatus(addInlineStatus, "已新增 `" + slug + "`。", "ok");
+      }).catch(function(error) {
+        setStatus("新增失敗：" + error.message, "error");
+        setInlineStatus(addInlineStatus, "新增失敗：" + error.message, "error");
+      });
+    });
+
+    saveEditButton.addEventListener("click", function() {
+      const selected = getSelectedEntry();
+
+      if (!selected) {
+        setStatus("請先選取一列，再進行編輯。", "warn");
+        return;
+      }
+
+      const slug = normalizeLower(editSlugInput.value);
+      const normalized = ensureProtocol(editUrlInput.value);
+      const nextStatus = normalizeLower(editStatusSelect.value);
+      const nextNote = normalizeFreeText(editNoteInput.value);
+
+      if (slug !== selected.slug) {
+        setStatus("v106 先不支援直接改 slug。若要換 slug，請新增新筆再 archive 舊筆。", "warn");
+        return;
+      }
+
+      if (!normalized.url || !validateUrl(normalized.url)) {
+        setStatus("無法儲存：target_url 必須是合法網址。", "error");
+        setInlineStatus(editInlineStatus, "儲存失敗：網址格式不正確。", "error");
+        editUrlInput.focus();
+        return;
+      }
+
+      const statusError = validateStatus(nextStatus);
+      if (statusError) {
+        setStatus("無法儲存：" + statusError, "error");
+        setInlineStatus(editInlineStatus, "儲存失敗：" + statusError, "error");
+        return;
+      }
+
+      setInlineStatus(editInlineStatus, "正在寫入 Google Sheet...", "warn");
+      callGas("update", {
+        slug: slug,
+        target_url: normalized.url,
+        note: nextNote
+      }).then(function() {
+        if (nextStatus === "active") {
+          return null;
+        }
+        return callGas(nextStatus === "archived" ? "archive" : "delete", {
+          slug: slug,
+          note: nextNote
+        });
+      }).then(function() {
+        return loadFromGas();
+      }).then(function() {
+        setStatus("已把 `" + slug + "` 更新到 Google Sheet。", "ok");
+        setInlineStatus(editInlineStatus, "已儲存 `" + slug + "`。", "ok");
+      }).catch(function(error) {
+        setStatus("儲存失敗：" + error.message, "error");
+        setInlineStatus(editInlineStatus, "儲存失敗：" + error.message, "error");
+      });
+    });
+
+    activeButton.addEventListener("click", function() {
+      const selected = getSelectedEntry();
+      if (!selected) {
+        setStatus("請先選取一列，再執行 active。", "warn");
+        return;
+      }
+      runStatusAction(selected, "restore", "active");
+    });
+
+    archiveButton.addEventListener("click", function() {
+      const selected = getSelectedEntry();
+      if (!selected) {
+        setStatus("請先選取一列，再執行 archive。", "warn");
+        return;
+      }
+      runStatusAction(selected, "archive", "archived");
+    });
+
+    deleteButton.addEventListener("click", function() {
+      const selected = getSelectedEntry();
+      if (!selected) {
+        setStatus("請先選取一列，再執行 delete。", "warn");
+        return;
+      }
+      runStatusAction(selected, "delete", "deleted");
+    });
+
+    cancelEditButton.addEventListener("click", function() {
+      state.selectedId = null;
+      render();
+      setStatus("已取消編輯。", "warn");
+      setInlineStatus(editInlineStatus, "已取消編輯。", "warn");
+    });
+
+    reloadButton.addEventListener("click", function() {
+      loadFromGas();
+    });
+
+    loadGasButton.addEventListener("click", function() {
+      loadFromGas();
+    });
+
+    exportButton.addEventListener("click", function() {
+      setInlineStatus(tableInlineStatus, "正在匯出 snapshot...", "warn");
+      callGas("export_snapshot").then(function(data) {
+        const snapshot = data.snapshot || {};
+        jsonPreview.value = JSON.stringify(snapshot, null, 2);
+        const filename = buildTimestampedFilename();
+        downloadTextFile(filename, JSON.stringify(snapshot, null, 2));
+        setStatus("已從 GAS 匯出 snapshot，並下載 " + filename + "。", "ok");
+        setInlineStatus(tableInlineStatus, "已下載 " + filename + "。", "ok");
+      }).catch(function(error) {
+        setStatus("匯出 snapshot 失敗：" + error.message, "error");
+        setInlineStatus(tableInlineStatus, "匯出失敗：" + error.message, "error");
+      });
+    });
+
+    backupButton.addEventListener("click", function() {
+      setInlineStatus(connectionInlineStatus, "正在執行 backup_now...", "warn");
+      callGas("backup_now").then(function(data) {
+        setStatus("backup_now 已完成，檔名：" + data.file_name, "ok");
+        setInlineStatus(connectionInlineStatus, "backup 完成：" + data.file_name, "ok");
+      }).catch(function(error) {
+        setStatus("backup_now 失敗：" + error.message, "error");
+        setInlineStatus(connectionInlineStatus, "backup 失敗：" + error.message, "error");
+      });
+    });
+
+    searchInput.addEventListener("input", function() {
+      state.searchTerm = searchInput.value || "";
+      state.page = 1;
+      render();
+    });
+
+    sortFieldSelect.addEventListener("change", function() {
+      state.sortField = sortFieldSelect.value;
+      state.page = 1;
+      render();
+      setStatus("已依 `" + state.sortField + "` 重新排序。", "ok");
+    });
+
+    sortOrderButton.addEventListener("click", function() {
+      state.sortOrder = state.sortOrder === "asc" ? "desc" : "asc";
+      state.page = 1;
+      render();
+      setStatus("排序方向已改為" + (state.sortOrder === "asc" ? "升冪" : "降冪") + "。", "ok");
+    });
+
+    togglePasswordButton.addEventListener("click", function() {
+      const isPassword = passwordInput.type === "password";
+      passwordInput.type = isPassword ? "text" : "password";
+      togglePasswordButton.textContent = isPassword ? "隱藏" : "顯示";
+    });
+
+    prevPageButton.addEventListener("click", function() {
+      if (state.page > 1) {
+        state.page -= 1;
+        render();
+      }
+    });
+
+    nextPageButton.addEventListener("click", function() {
+      const pageCount = getPageCount();
+      if (state.page < pageCount) {
+        state.page += 1;
+        render();
+      }
+    });
+
+    gasUrlInput.value = DEFAULT_GAS_URL;
+    sortFieldSelect.value = state.sortField;
+    sortOrderButton.textContent = "目前：降冪";
+    clearInlineStatuses();
+    loadDefaultJson();
+  </script>
 </body>
 </html>
