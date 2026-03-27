@@ -12,6 +12,8 @@
 - 意義：`v1.03`
 - `v104`
 - 意義：`v1.04`
+- `v105`
+- 意義：`v1.05`
 
 主檔：
 
@@ -19,8 +21,10 @@
 - [falo-shortlink-json-editor-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v102.html)
 - [falo-shortlink-json-editor-v103.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v103.html)
 - [falo-shortlink-json-editor-v104.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v104.html)
+- [falo-shortlink-json-editor-v105.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v105.html)
 - [falo-shortlink-guide-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v101.html)
 - [falo-shortlink-guide-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v102.html)
+- [gas-v2/README.md](/Users/force/AI-CodeX/tools/shortlink/gas-v2/README.md)
 
 ## 這是什麼工具
 
@@ -40,8 +44,16 @@
   - v101 給人看的說明頁
 - `falo-shortlink-guide-v102.html`
   - v102 給人看的說明頁
+- `falo-shortlink-json-editor-v105.html`
+  - Google Sheet 直連維護器
+  - 透過 GAS 讀取與更新主資料源
+- `gas-v2/`
+  - Google Sheets + Apps Script 版最小可用範本
+  - 先收成單一 `main.gs` 版
+  - 檔內用模組區塊註解分功能
+  - 提供公開 lookup、簡單密碼 admin、snapshot 匯出與 backup
 
-## v101 / v102 / v103 / v104 的差異
+## v101 / v102 / v103 / v104 / v105 的差異
 
 - `v101`
   - 比較像工程底稿 / JSON 對照版
@@ -59,6 +71,11 @@
   - 時間改成台北時間
   - `archived` / `deleted` 後可直接按 `active` 恢復
   - 把操作按鈕移到表格最左邊
+- `v105`
+  - 把維護頁正式接上 GAS
+  - 可直接讀取 Google Sheet
+  - 可直接送 `create / update / archive / restore / delete / export_snapshot / backup_now`
+  - 主資料源從本地 JSON 維護，升級成 GAS / Sheet 維護
 
 一句話理解：
 
@@ -66,6 +83,8 @@
 - `v102` = 表格視角
 - `v103` = 防呆一致性視角
 - `v104` = 操作優化視角
+- `v105` = GAS 直連維護視角
+- `gas-v2` = GAS 主資料源視角
 
 用途：
 
