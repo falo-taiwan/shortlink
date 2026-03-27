@@ -1,4 +1,4 @@
-# Shortlink v101
+# Shortlink
 
 這個資料夾是 shortlink 的第一版資料維護區。
 
@@ -6,28 +6,51 @@
 
 - `v101`
 - 意義：`v1.01`
+- `v102`
+- 意義：`v1.02`
 
 主檔：
 
 - [falo-shortlink-json-editor-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v101.html)
+- [falo-shortlink-json-editor-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v102.html)
 - [falo-shortlink-guide-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v101.html)
+- [falo-shortlink-guide-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v102.html)
 
 ## 這是什麼工具
 
-這一版不是 router，不是 redirect 頁，也不是 GAS 後台。
+這一區不是 router，不是 redirect 頁，也不是 GAS 後台。
 
 它的角色很單純：
 
 - `falo-shortlink-json-editor-v101.html`
-  - `links.json` 維護器
+  - JSON 視角維護器
+- `falo-shortlink-json-editor-v102.html`
+  - 表格視角維護器
 - `falo-shortlink-guide-v101.html`
-  - 給人看的說明頁
+  - v101 給人看的說明頁
+- `falo-shortlink-guide-v102.html`
+  - v102 給人看的說明頁
+
+## v101 與 v102 的差異
+
+- `v101`
+  - 比較像工程底稿 / JSON 對照版
+  - 適合教學、理解資料格式、直接對照輸出結果
+- `v102`
+  - 比較像日常維護頁 / 表格操作版
+  - 使用者不必直接看 raw JSON
+  - 主要改用表格做排序、分頁、編輯、新增、刪除
+
+一句話理解：
+
+- `v101` = JSON 視角
+- `v102` = 表格視角
 
 用途：
 
 - 自動讀取預設 `links.json`
 - 手動上傳既有 `links.json`
-- 顯示 slug 與 target URL 列表
+- 顯示 slug 與 target URL
 - 新增 / 修改 / 刪除 shortlink
 - 匯出新的 `links.json`
 
@@ -95,10 +118,16 @@ v1 先固定使用最簡字串對字串格式：
 - 每筆資料都包含：
   - `slug`
   - `target URL`
-- 上方有「新增一筆」欄位，可直接輸入新的 `slug` 與 `target URL`
-- 按下新增後，會直接加入清單，並立即下載一份新的 JSON
-- 可直接修改既有資料
-- 可刪除單筆資料
+- `v101`
+  - 上方有新增欄位
+  - 可直接修改列表中的資料
+- `v102`
+  - 上方有新增表單
+  - 中間主畫面是表格
+  - 可依 `slug` 或 `target URL` 做前端排序
+  - 內建分頁，每頁固定 10 筆
+  - 點選某列的「編輯」後，在右側編輯表單修改
+  - 刪除前會有確認提示
 
 驗證規則：
 
@@ -111,10 +140,13 @@ v1 先固定使用最簡字串對字串格式：
 
 有兩種下載方式：
 
-1. 在上方新增一筆時，按 `新增一筆並下載 JSON`
-2. 完成整體修改後，按 `匯出 links.json`
+1. `v101`
+   - 在上方新增一筆時，可直接下載 JSON
+   - 或按 `匯出 links.json`
+2. `v102`
+   - 完成表格操作後，按 `匯出新的 links.json`
 
-新增一筆時，檔名會自動帶時間戳到「分」，例如：
+匯出檔名會自動帶時間戳到「分」，例如：
 
 - `links-20260327-1530.json`
 
@@ -140,7 +172,9 @@ v1 先固定使用最簡字串對字串格式：
 │   │   └─ README.md
 │   └─ /shortlink/
 │       ├─ falo-shortlink-json-editor-v101.html
+│       ├─ falo-shortlink-json-editor-v102.html
 │       ├─ falo-shortlink-guide-v101.html
+│       ├─ falo-shortlink-guide-v102.html
 │       └─ README.md
 ```
 
@@ -157,10 +191,22 @@ v1 先固定使用最簡字串對字串格式：
 
 1. 打開 shortlink editor
 2. 讀取目前 `links.json`
-3. 完成新增 / 修改 / 刪除
-4. 匯出新的 `links.json`
-5. 把下載好的檔案，手動覆蓋主站 repo root 的 `/links.json`
-6. 提交並部署主站
+3. 若你想看資料契約與 JSON 對照，用 `v101`
+4. 若你想直接維護線上資料，用 `v102`
+5. 完成新增 / 修改 / 刪除
+6. 匯出新的 `links.json`
+7. 確認匯出內容沒問題
+8. 把下載好的檔案，手動覆蓋主站 repo root 的 `/links.json`
+9. 提交並部署主站
+
+如果你平常真的要維護，建議順序是：
+
+1. 先打開 [falo-shortlink-json-editor-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v102.html)
+2. 在表格中排序、找資料、編輯、新增、刪除
+3. 匯出新的 `links.json`
+4. 再人工覆蓋 root 的 `links.json`
+
+如果你要做教學或查資料格式，再回頭看 `v101`。
 
 如果你是人工維護 GitHub Pages，這個流程是最直覺也最穩的。
 

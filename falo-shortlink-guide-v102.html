@@ -1,0 +1,307 @@
+<!doctype html>
+<!--
+Project: Force Cheng × FALO Tools
+Tool: Shortlink Guide
+Version: v102
+Last Updated: 2026-03-28
+Copyright: © 2026 Force Cheng × FALO. All rights reserved.
+Website: https://force.formosa-ai.com
+
+Design:
+- Single-file first
+- Local-first
+- Mobile-first
+- GitHub Pages ready
+-->
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FALO Shortlink Guide v102 | 表格版說明頁 | Force Cheng × FALO</title>
+  <meta name="description" content="FALO Shortlink Guide v102 說明 shortlink 表格操作版的工作方式、links.json 格式、建議目錄結構、人工更新流程，以及 v101 與 v102 的差異。">
+  <style>
+    :root {
+      --bg: #f7fbf6;
+      --panel: #ffffff;
+      --panel-soft: #fbfcff;
+      --line: #dbe4e7;
+      --text: #2f2f38;
+      --muted: #6a6f7b;
+      --brand: #7cc8a2;
+      --brand-deep: #5f6acb;
+      --shadow: 0 18px 40px rgba(77, 103, 96, 0.09);
+      --radius: 20px;
+      --max-width: 920px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Iansui", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(124, 200, 162, 0.18), transparent 26%),
+        radial-gradient(circle at top right, rgba(95, 106, 203, 0.12), transparent 24%),
+        linear-gradient(180deg, #fcfffb 0%, #f7fbf6 100%);
+    }
+
+    .page,
+    footer {
+      width: min(var(--max-width), calc(100% - 20px));
+      margin: 0 auto;
+    }
+
+    .page {
+      padding: 18px 0 28px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .hero,
+    .section-body {
+      display: grid;
+      gap: 12px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(124, 200, 162, 0.14);
+      color: var(--brand-deep);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p, pre {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(34px, 8vw, 50px);
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+
+    h2 {
+      font-size: 22px;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+
+    .lead {
+      color: var(--brand-deep);
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .helper,
+    .list,
+    .note {
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      display: inline-flex;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .list {
+      display: grid;
+      gap: 6px;
+    }
+
+    pre {
+      overflow: auto;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      line-height: 1.7;
+      font-size: 13px;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
+    .footer-link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      padding: 0 0 28px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    @media (min-width: 860px) {
+      .page,
+      footer {
+        width: min(var(--max-width), calc(100% - 40px));
+      }
+
+      .page {
+        padding-top: 30px;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel hero">
+      <div class="eyebrow">Single File HTML · v102</div>
+      <h1>短網址表格版說明頁</h1>
+      <p class="lead">v102 把 shortlink 維護從 JSON 視角，改成更接近日常使用的表格視角。</p>
+      <p class="helper">你可以把它理解成：`links.json` 仍然是資料契約，但維護時不必先看 raw JSON，而是先看表格、再排序、分頁、編輯、刪除，最後才匯出新的 JSON。</p>
+      <div class="chips">
+        <span class="chip">shortlink v102</span>
+        <span class="chip">表格操作版</span>
+        <span class="chip">GitHub Pages ready</span>
+      </div>
+    </section>
+
+    <section class="grid">
+      <section class="panel section-body">
+        <h2>v102 是做什麼的</h2>
+        <p class="helper">v102 不是重做資料格式，而是重做操作體驗。它讓維護者先從表格看資料，再進行：</p>
+        <div class="list">
+          <div>1. 排序：先把資料整理到你想看的順序。</div>
+          <div>2. 分頁：一頁固定筆數，避免資料一多就難找。</div>
+          <div>3. 編輯：點選某列後，在右側表單修改。</div>
+          <div>4. 新增：直接在上方表單新增新短網址。</div>
+          <div>5. 刪除：刪除前做確認，避免誤刪。</div>
+        </div>
+      </section>
+
+      <section class="panel section-body">
+        <h2>v101 與 v102 差異</h2>
+        <div class="list">
+          <div>1. `v101`：比較像工程底稿，適合教學與對照 JSON。</div>
+          <div>2. `v102`：比較像實際維護頁，適合日常操作。</div>
+          <div>3. `v101`：JSON 是主體畫面。</div>
+          <div>4. `v102`：表格是主體畫面，JSON 只保留成輔助預覽。</div>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel section-body">
+      <h2>v102 工作方式</h2>
+      <div class="list">
+        <div>1. 開頁先嘗試讀取 repo root 的 `links.json`。</div>
+        <div>2. 成功後，把資料載入表格。</div>
+        <div>3. 你可以依 `slug` 或 `target URL` 排序。</div>
+        <div>4. 你可以翻頁找資料。</div>
+        <div>5. 你可以點選某列的 `編輯`，在右側修改內容。</div>
+        <div>6. 最後匯出新的 `links.json`，再人工覆蓋主站 root。</div>
+      </div>
+    </section>
+
+    <section class="panel section-body">
+      <h2>links.json 格式不變</h2>
+      <p class="helper">v102 雖然換成表格介面，但資料契約不變，仍然沿用最簡字串對字串格式。</p>
+      <pre>{
+  "123": "https://www.google.com/",
+  "demo": "https://force.formosa-ai.com",
+  "force": "https://force.formosa-ai.com/about/",
+  "qrcode": "https://falo-taiwan.github.io/tools/qrcode/falo-qrcode-v102.html",
+  "shortlink": "https://falo-taiwan.github.io/tools/shortlink/falo-shortlink-json-editor-v101.html"
+}</pre>
+      <p class="note">也就是說，UI 可以升級，但資料面先不改，這樣 router 和後續 GAS 路線都不會被破壞。</p>
+    </section>
+
+    <section class="panel section-body">
+      <h2>建議目錄結構</h2>
+      <pre>/
+├─ 404.html
+├─ links.json
+├─ /go/
+│   └─ （短網址入口，由 404.html 接管）
+├─ /tools/
+│   ├─ /qrcode/
+│   │   ├─ falo-qrcode-v102.html
+│   │   └─ README.md
+│   └─ /shortlink/
+│       ├─ falo-shortlink-json-editor-v101.html
+│       ├─ falo-shortlink-json-editor-v102.html
+│       ├─ falo-shortlink-guide-v101.html
+│       ├─ falo-shortlink-guide-v102.html
+│       └─ README.md</pre>
+      <p class="note">重點是：`links.json` 與 `404.html` 仍放在 repo root，而 editor 與 guide 放在 `tools/shortlink/`。</p>
+    </section>
+
+    <section class="grid">
+      <section class="panel section-body">
+        <h2>人工更新流程</h2>
+        <div class="list">
+          <div>1. 打開 `falo-shortlink-json-editor-v102.html`。</div>
+          <div>2. 自動讀取目前 `links.json`。</div>
+          <div>3. 在表格中排序、找資料、編輯、新增、刪除。</div>
+          <div>4. 匯出新的 `links.json`。</div>
+          <div>5. 人工覆蓋主站 repo root 的 `links.json`。</div>
+          <div>6. 提交並部署主站。</div>
+        </div>
+      </section>
+
+      <section class="panel section-body">
+        <h2>這一版的限制</h2>
+        <div class="list">
+          <div>1. 沒有自動寫回 GitHub。</div>
+          <div>2. 沒有 GAS、Google Sheet、權限控管。</div>
+          <div>3. 沒有複雜欄位，仍只維護 `slug` 與 `target URL`。</div>
+          <div>4. 沒有多語系與額外 SEO 強化，先以維護效率為主。</div>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel section-body">
+      <h2>為什麼 v102 值得做</h2>
+      <p class="helper">因為 `v101` 比較像教材底稿，而 `v102` 才比較像你平常會真的打開來維護資料的頁面。它不是改架構，而是把「維護體驗」往前推了一步。</p>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 Force Cheng × FALO. All rights reserved.<br>
+    <a class="footer-link" href="https://force.formosa-ai.com">Force Cheng Web : https://force.formosa-ai.com</a>
+  </footer>
+</body>
+</html>
