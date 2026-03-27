@@ -198,6 +198,13 @@ Design:
       background: #fff;
     }
 
+    .password-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
     textarea {
       min-height: 220px;
       resize: vertical;
@@ -421,7 +428,10 @@ Design:
             </div>
             <div>
               <label for="password-input">管理密碼</label>
-              <input id="password-input" type="text" placeholder="例如：123">
+              <div class="password-row">
+                <input id="password-input" type="password" placeholder="例如：123">
+                <button class="button-secondary" id="toggle-password-btn" type="button">顯示</button>
+              </div>
             </div>
             <div>
               <label for="gas-url-input">GAS Web App URL</label>
@@ -486,6 +496,11 @@ Design:
               <button class="button-secondary" id="sort-order-btn" type="button">目前：升冪</button>
             </div>
             <span class="tiny" id="summary-text">目前 0 筆</span>
+          </div>
+
+          <div>
+            <label for="search-input">關鍵字搜尋</label>
+            <input id="search-input" type="text" placeholder="主要搜尋網址，也可搜 slug / note">
           </div>
 
           <div class="table-wrap">
@@ -577,8 +592,10 @@ Design:
     const exportButton = document.getElementById("export-btn");
     const loadGasButton = document.getElementById("load-gas-btn");
     const backupButton = document.getElementById("backup-btn");
+    const togglePasswordButton = document.getElementById("toggle-password-btn");
     const sortFieldSelect = document.getElementById("sort-field");
     const sortOrderButton = document.getElementById("sort-order-btn");
+    const searchInput = document.getElementById("search-input");
     const tableBody = document.getElementById("table-body");
     const emptyState = document.getElementById("empty-state");
     const pageText = document.getElementById("page-text");
@@ -610,8 +627,9 @@ Design:
       nextId: 1,
       entries: [],
       source: "gas",
-      sortField: "slug",
-      sortOrder: "asc",
+      sortField: "updated_at",
+      sortOrder: "desc",
+      searchTerm: "",
       page: 1,
       selectedId: null
     };
@@ -851,9 +869,22 @@ Design:
     }
 
     function getSortedEntries() {
+      const searchTerm = normalizeLower(state.searchTerm);
       const key = state.sortField;
       const orderFactor = state.sortOrder === "asc" ? 1 : -1;
-      return state.entries.slice().sort(function(a, b) {
+      return state.entries.filter(function(entry) {
+        if (!searchTerm) {
+          return true;
+        }
+        return [
+          entry.target_url,
+          entry.slug,
+          entry.note,
+          entry.updated_by
+        ].some(function(value) {
+          return normalizeLower(value).includes(searchTerm);
+        });
+      }).sort(function(a, b) {
         const left = normalizeLower(a[key]);
         const right = normalizeLower(b[key]);
         if (left < right) return -1 * orderFactor;
@@ -863,7 +894,7 @@ Design:
     }
 
     function getPageCount() {
-      return Math.max(1, Math.ceil(state.entries.length / PAGE_SIZE));
+      return Math.max(1, Math.ceil(getSortedEntries().length / PAGE_SIZE));
     }
 
     function getVisibleEntries() {
@@ -919,7 +950,8 @@ Design:
     }
 
     function renderSummary() {
-      summaryText.textContent = "目前 " + state.entries.length + " 筆";
+      const filteredCount = getSortedEntries().length;
+      summaryText.textContent = "目前 " + filteredCount + " / " + state.entries.length + " 筆";
       sortOrderButton.textContent = "目前：" + (state.sortOrder === "asc" ? "升冪" : "降冪");
     }
 
@@ -1263,6 +1295,12 @@ Design:
       });
     });
 
+    searchInput.addEventListener("input", function() {
+      state.searchTerm = searchInput.value || "";
+      state.page = 1;
+      render();
+    });
+
     sortFieldSelect.addEventListener("change", function() {
       state.sortField = sortFieldSelect.value;
       state.page = 1;
@@ -1275,6 +1313,12 @@ Design:
       state.page = 1;
       render();
       setStatus("排序方向已改為" + (state.sortOrder === "asc" ? "升冪" : "降冪") + "。", "ok");
+    });
+
+    togglePasswordButton.addEventListener("click", function() {
+      const isPassword = passwordInput.type === "password";
+      passwordInput.type = isPassword ? "text" : "password";
+      togglePasswordButton.textContent = isPassword ? "隱藏" : "顯示";
     });
 
     prevPageButton.addEventListener("click", function() {
@@ -1293,6 +1337,8 @@ Design:
     });
 
     gasUrlInput.value = DEFAULT_GAS_URL;
+    sortFieldSelect.value = state.sortField;
+    sortOrderButton.textContent = "目前：降冪";
     loadDefaultJson();
   </script>
 </body>

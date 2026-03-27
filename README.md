@@ -76,6 +76,9 @@
   - 可直接讀取 Google Sheet
   - 可直接送 `create / update / archive / restore / delete / export_snapshot / backup_now`
   - 主資料源從本地 JSON 維護，升級成 GAS / Sheet 維護
+  - 密碼欄位改為遮罩顯示，可手動切換顯示 / 隱藏
+  - 預設改成依 `updated_at` 降冪排序
+  - 補上關鍵字搜尋欄，主要用於搜尋網址
 
 一句話理解：
 
