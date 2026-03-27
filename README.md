@@ -1,6 +1,55 @@
 # Shortlink
 
-這個資料夾是 shortlink 的第一版資料維護區。
+這個資料夾現在不只是維護工具集合，也是一個完整的 shortlink 小專案。
+
+核心定位：
+
+- `Google Sheets + GAS`
+  - 主資料源
+- `網站 root /links.json`
+  - published snapshot / fallback
+- `tools/shortlink/404.html`
+  - shortlink 專案內唯一維護的 router 原始檔
+
+一句話理解：
+
+- shortlink 專案內維護
+- 網站 root 手動部署
+
+## 專案邊界
+
+現在這個 shortlink 專案包含三條線：
+
+1. 維護頁
+- `falo-shortlink-json-editor-v101.html`
+- `falo-shortlink-json-editor-v102.html`
+- `falo-shortlink-json-editor-v103.html`
+- `falo-shortlink-json-editor-v104.html`
+- `falo-shortlink-json-editor-v105.html`
+- `falo-shortlink-json-editor-v106.html`
+
+2. router
+- [404.html](/Users/force/AI-CodeX/tools/shortlink/404.html)
+- 這是 shortlink 專案內唯一維護的 router 原始檔
+- GitHub Pages 真正部署時，再手動放到網站 root 的 `/404.html`
+
+3. GAS 範本
+- [gas-v2/README.md](/Users/force/AI-CodeX/tools/shortlink/gas-v2/README.md)
+- [gas-v2/main.gs](/Users/force/AI-CodeX/tools/shortlink/gas-v2/main.gs)
+
+4. 404 router 專用文件
+- [404-readme.md](/Users/force/AI-CodeX/tools/shortlink/404-readme.md)
+
+## Source Of Truth
+
+對 shortlink 這個專案來說，建議的 source of truth 是：
+
+- router source：
+  - [tools/shortlink/404.html](/Users/force/AI-CodeX/tools/shortlink/404.html)
+- data source：
+  - Google Sheets + GAS
+- fallback snapshot：
+  - 網站 root 的 `links.json`
 
 版本：
 
@@ -14,6 +63,8 @@
 - 意義：`v1.04`
 - `v105`
 - 意義：`v1.05`
+- `v106`
+- 意義：`v1.06`
 
 主檔：
 
@@ -22,15 +73,16 @@
 - [falo-shortlink-json-editor-v103.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v103.html)
 - [falo-shortlink-json-editor-v104.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v104.html)
 - [falo-shortlink-json-editor-v105.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v105.html)
+- [falo-shortlink-json-editor-v106.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v106.html)
+- [404.html](/Users/force/AI-CodeX/tools/shortlink/404.html)
+- [404-readme.md](/Users/force/AI-CodeX/tools/shortlink/404-readme.md)
 - [falo-shortlink-guide-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v101.html)
 - [falo-shortlink-guide-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v102.html)
 - [gas-v2/README.md](/Users/force/AI-CodeX/tools/shortlink/gas-v2/README.md)
 
 ## 這是什麼工具
 
-這一區不是 router，不是 redirect 頁，也不是 GAS 後台。
-
-它的角色很單純：
+這一區現在有三種角色：
 
 - `falo-shortlink-json-editor-v101.html`
   - JSON 視角維護器
@@ -47,13 +99,25 @@
 - `falo-shortlink-json-editor-v105.html`
   - Google Sheet 直連維護器
   - 透過 GAS 讀取與更新主資料源
+- `falo-shortlink-json-editor-v106.html`
+  - v105 的延伸版
+  - 把這次 timeout 是關鍵因素的發現正式寫進版本
+  - 適合拿來當「GAS 主資料源不等於一定即時成功」的教材版
+- `404.html`
+  - shortlink router 維護來源
+  - 用來接管 `/go/<slug>`
+  - 目前支援：
+    - GAS JSONP lookup
+    - GAS fetch fallback
+    - `links.json` fallback
+    - 中轉頁版本時間顯示
 - `gas-v2/`
   - Google Sheets + Apps Script 版最小可用範本
   - 先收成單一 `main.gs` 版
   - 檔內用模組區塊註解分功能
   - 提供公開 lookup、簡單密碼 admin、snapshot 匯出與 backup
 
-## v101 / v102 / v103 / v104 / v105 的差異
+## v101 / v102 / v103 / v104 / v105 / v106 的差異
 
 - `v101`
   - 比較像工程底稿 / JSON 對照版
@@ -79,6 +143,10 @@
   - 密碼欄位改為遮罩顯示，可手動切換顯示 / 隱藏
   - 預設改成依 `updated_at` 降冪排序
   - 補上關鍵字搜尋欄，主要用於搜尋網址
+- `v106`
+  - 延續 `v105` 的 GAS 直連維護流程
+  - 額外把這次 shortlink 成敗與 timeout 之間的關係正式寫進版本註解
+  - 用來提醒：資料存在，不代表查詢一定能在短時間內成功
 
 一句話理解：
 
@@ -87,6 +155,7 @@
 - `v103` = 防呆一致性視角
 - `v104` = 操作優化視角
 - `v105` = GAS 直連維護視角
+- `v106` = GAS 直連 + timeout 教學視角
 - `gas-v2` = GAS 主資料源視角
 
 用途：
@@ -166,7 +235,7 @@
 
 ### 1. 自動讀取預設 JSON
 
-打開 [falo-shortlink-json-editor-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v101.html) 後，頁面會先嘗試讀取 repo root 的 `links.json`。
+打開 [falo-shortlink-json-editor-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v101.html) 後，頁面會先嘗試讀取網站 root 的 `links.json`。
 
 如果成功：
 
@@ -251,11 +320,11 @@
 
 這一版不會自動寫回 GitHub。
 
-## 建議放置位置
+## 建議目錄
 
-主站 repo：
+主站網站：
 
-- `falo-taiwan.github.io`
+- `https://falo-taiwan.github.io`
 
 建議結構：
 
@@ -263,26 +332,53 @@
 /
 ├─ 404.html
 ├─ links.json
-├─ /go/
-│   └─ （未來 shortlink 入口路徑）
 ├─ /tools/
 │   ├─ /qrcode/
 │   │   ├─ falo-qrcode-v102.html
 │   │   └─ README.md
 │   └─ /shortlink/
+│       ├─ 404.html
 │       ├─ falo-shortlink-json-editor-v101.html
 │       ├─ falo-shortlink-json-editor-v102.html
+│       ├─ falo-shortlink-json-editor-v103.html
+│       ├─ falo-shortlink-json-editor-v104.html
+│       ├─ falo-shortlink-json-editor-v105.html
 │       ├─ falo-shortlink-guide-v101.html
 │       ├─ falo-shortlink-guide-v102.html
+│       ├─ /gas-v2/
+│       │   ├─ main.gs
+│       │   ├─ appsscript.json
+│       │   └─ README.md
 │       └─ README.md
 ```
 
 重點：
 
-- `links.json` 放在 repo root
-- `404.html` 也放在 repo root
-- `404.html` 後續可直接吃 root 的 `links.json`
-- `tools/shortlink/` 放維護工具與說明文件
+- `links.json` 放在網站 root
+- shortlink 專案內唯一維護的是 `tools/shortlink/404.html`
+- 每次調整 router 時，只改 `tools/shortlink/404.html`
+- 確認沒問題後，再手動部署到網站 root 的 `/404.html`
+- `tools/shortlink/` 放維護工具、router source 與說明文件
+
+## Router 同步流程
+
+建議流程：
+
+1. 先改 [tools/shortlink/404.html](/Users/force/AI-CodeX/tools/shortlink/404.html)
+2. 確認中轉頁版本時間有更新
+3. 再手動部署到網站 root 的 `/404.html`
+4. 重新整理後測主站
+5. 線上測：
+   - `/go/demo`
+   - `/go/g1`
+   - `/go/pch3`
+   - `/go/notfound`
+
+如果線上中轉頁看不到最新時間，例如：
+
+- `Router Updated: YYYY-MM-DD HH:MM TPE`
+
+就代表網站上的 `/404.html` 還不是最新部署版。
 
 ## 如何人工覆蓋到主站 root
 
@@ -297,15 +393,16 @@
 7. 完成新增 / 修改 / active / archive / delete
 8. 匯出新的 `links.json`
 9. 確認匯出內容沒問題
-10. 把下載好的檔案，手動覆蓋主站 repo root 的 `/links.json`
-11. 提交並部署主站
+10. 把下載好的檔案，手動覆蓋網站 root 的 `links.json`
+11. 若 router 也有更新，再手動部署網站 root 的 `/404.html`
+12. 重新整理後測主站
 
 如果你平常真的要維護，建議順序是：
 
 1. 先打開 [falo-shortlink-json-editor-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v102.html)
 2. 在表格中排序、找資料、編輯、新增、刪除
 3. 匯出新的 `links.json`
-4. 再人工覆蓋 root 的 `links.json`
+4. 再人工覆蓋網站 root 的 `links.json`
 
 如果你現在要優先防錯，我更建議：
 
@@ -313,11 +410,27 @@
 2. 先設定操作者
 3. 再做新增、編輯、active、archive、delete
 4. 匯出新的 `links.json`
-5. 再人工覆蓋 root 的 `links.json`
+5. 再人工覆蓋網站 root 的 `links.json`
 
 如果你要做教學或查資料格式，再回頭看 `v101`。
 
 如果你是人工維護 GitHub Pages，這個流程是最直覺也最穩的。
+
+## Router 工作方式
+
+目前 router 的工作方式是：
+
+1. 使用者打 `/go/<slug>`
+2. 網站 root 的 `/404.html` 接管
+3. 先問 GAS
+   - 先走 JSONP
+   - 若 JSONP 沒有 usable result，再退回 fetch
+4. 若 GAS 成功
+   - 直接 redirect
+5. 若 GAS 失敗
+   - fallback 到網站 root 的 `links.json`
+6. 若都沒有
+   - 顯示 `Shortlink not found`
 
 ## 後續如何接到 404.html
 
