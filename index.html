@@ -2,8 +2,8 @@
 <!--
 Project: FALO x Force Cheng Tools
 Tool: Shortlink GAS Editor
-Version: v201
-Last Updated: 2026-03-27 20:38 TPE
+Version: v202
+Last Updated: 2026-03-27 20:41 TPE
 Copyright: © 2026 FALO x Force Cheng. All rights reserved.
 Website: https://force.formosa-ai.com
 
@@ -17,13 +17,14 @@ Notes:
 - This version is prepared for external testers.
 - The password field is shown as plain text and prefilled with 123 for testing convenience.
 - Testing note: during the test period, the password is 123.
+- This version explains the site purpose more clearly for external users.
 -->
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FALO Shortlink GAS Editor v201 | 外部測試版 | FALO x Force Cheng</title>
-  <meta name="description" content="FALO Shortlink GAS Editor v201 是給外部測試者使用的 shortlink 維護頁，可直接讀取與更新 Google Sheet，並協助測試短網址建立、修改、封存與匯出流程。">
+  <title>FALO Shortlink GAS Editor v202 | 外部使用者版 | FALO x Force Cheng</title>
+  <meta name="description" content="FALO Shortlink GAS Editor v202 是給外部使用者與測試者使用的 shortlink 操作頁，可讀取 Google Sheet、建立與修改短網址，並實際驗證 /go/ 跳轉流程。">
   <style>
     :root {
       --bg: #f7fbf6;
@@ -415,14 +416,14 @@ Notes:
 <body>
   <main class="page">
     <section class="panel hero">
-      <div class="eyebrow">Single File HTML · v201</div>
-      <h1>短網址測試維護站</h1>
-      <p class="lead">這個網站是給外部測試者使用的 shortlink 維護頁，讓你可以直接查看、建立、修改與測試短網址資料。</p>
-      <p class="helper">資料主來源是 Google Sheet。你可以用這頁讀取目前 shortlink 清單、建立新網址、調整狀態、匯出 snapshot，並協助確認整個 shortlink 流程是否正常運作。</p>
+      <div class="eyebrow">Single File HTML · v202</div>
+      <h1>短網址外部測試站</h1>
+      <p class="lead">這個網站是 shortlink 的外部操作與測試入口，讓你可以查看、建立、修改短網址，並確認短網址是否能正常導向。</p>
+      <p class="helper">資料主來源是 Google Sheet。你可以先讀取目前 shortlink 清單，再新增或修改一筆資料，最後用 `/go/slug` 實際測試跳轉結果。簡單說，這一頁就是 shortlink 的查看入口、維護入口，也是驗證入口。</p>
       <div class="chips">
-        <span class="chip">外部測試版</span>
+        <span class="chip">外部使用者版</span>
         <span class="chip">Google Sheet 主資料源</span>
-        <span class="chip">shortlink 測試 / 維護</span>
+        <span class="chip">建立 / 修改 / 驗證 shortlink</span>
       </div>
     </section>
 
@@ -457,7 +458,7 @@ Notes:
             <button class="button-secondary" id="backup-btn" type="button">執行 backup_now</button>
             <span class="inline-status" id="connection-status-inline" data-tone="warn"></span>
           </div>
-          <p class="note">這個網站會把操作者與密碼送到 GAS admin API，藉此讀取或更新 Google Sheet。測試期間先使用簡單密碼模式，方便外部測試者快速進入流程。</p>
+          <p class="note">這個網站會把操作者與密碼送到 GAS admin API，藉此讀取或更新 Google Sheet。測試期間先使用簡單密碼模式，外部使用者可直接用 `123` 進入測試流程。</p>
         </div>
 
         <div class="section-box">
@@ -549,7 +550,7 @@ Notes:
       <section class="panel stack">
         <div class="editor-box">
           <h2>編輯選取列</h2>
-          <p class="note">先按表格中的 `編輯`。`archive / delete / restore` 都會直接送到 GAS，再由 GAS 更新 Google Sheet。這樣外部測試者也能直接驗證 shortlink 資料流是否正常。</p>
+          <p class="note">先按表格中的 `編輯`。`archive / delete / restore` 都會直接送到 GAS，再由 GAS 更新 Google Sheet。這樣你不只是在改資料，也是在確認 shortlink 的管理流程是否正常運作。</p>
           <div>
             <label for="edit-slug">slug</label>
             <input id="edit-slug" type="text" placeholder="請先從左側選一列">
@@ -584,7 +585,7 @@ Notes:
         <div class="preview-box">
           <h2>snapshot 預覽</h2>
           <p class="note">這裡顯示目前表格可對應出的 snapshot 預覽。按下匯出時，會直接呼叫 GAS `export_snapshot`。</p>
-          <div class="status" id="status" data-tone="warn">請先確認操作者、測試密碼與 GAS URL，然後讀取 Google Sheet。</div>
+          <div class="status" id="status" data-tone="warn">請先確認操作者、測試密碼 123 與 GAS URL，然後讀取 Google Sheet。</div>
           <details>
             <summary>展開 snapshot 預覽</summary>
             <textarea id="json-preview" readonly spellcheck="false"></textarea>
@@ -1245,7 +1246,7 @@ Notes:
       const nextNote = normalizeFreeText(editNoteInput.value);
 
       if (slug !== selected.slug) {
-        setStatus("v201 先不支援直接改 slug。若要換 slug，請新增新筆再 archive 舊筆。", "warn");
+        setStatus("v202 先不支援直接改 slug。若要換 slug，請新增新筆再 archive 舊筆。", "warn");
         return;
       }
 
