@@ -8,11 +8,14 @@
 - 意義：`v1.01`
 - `v102`
 - 意義：`v1.02`
+- `v103`
+- 意義：`v1.03`
 
 主檔：
 
 - [falo-shortlink-json-editor-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v101.html)
 - [falo-shortlink-json-editor-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v102.html)
+- [falo-shortlink-json-editor-v103.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v103.html)
 - [falo-shortlink-guide-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v101.html)
 - [falo-shortlink-guide-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v102.html)
 
@@ -26,12 +29,14 @@
   - JSON 視角維護器
 - `falo-shortlink-json-editor-v102.html`
   - 表格視角維護器
+- `falo-shortlink-json-editor-v103.html`
+  - 防呆一致性維護器
 - `falo-shortlink-guide-v101.html`
   - v101 給人看的說明頁
 - `falo-shortlink-guide-v102.html`
   - v102 給人看的說明頁
 
-## v101 與 v102 的差異
+## v101 / v102 / v103 的差異
 
 - `v101`
   - 比較像工程底稿 / JSON 對照版
@@ -40,11 +45,16 @@
   - 比較像日常維護頁 / 表格操作版
   - 使用者不必直接看 raw JSON
   - 主要改用表格做排序、分頁、編輯、新增、刪除
+- `v103`
+  - 比較像防錯優先的資料層版本
+  - 重點不在多功能，而在資料一致性
+  - 補上操作者欄位、URL 自動補全、archive / delete 狀態、舊格式轉換與統一小寫
 
 一句話理解：
 
 - `v101` = JSON 視角
 - `v102` = 表格視角
+- `v103` = 防呆一致性視角
 
 用途：
 
@@ -56,7 +66,7 @@
 
 ## links.json 格式
 
-v1 先固定使用最簡字串對字串格式：
+`v101` / `v102` 主要操作的基礎格式：
 
 ```json
 {
@@ -82,6 +92,41 @@ v1 先固定使用最簡字串對字串格式：
 - 好維護
 - 最好接 `404.html`
 - 後續升級成 GAS / JSON fallback 也容易
+
+`v103` 匯出格式：
+
+```json
+{
+  "demo": {
+    "target_url": "https://force.formosa-ai.com",
+    "status": "active",
+    "created_at": "2026-03-28t00:00:00.000z",
+    "created_by": "force",
+    "updated_at": "2026-03-28t00:00:00.000z",
+    "updated_by": "force"
+  }
+}
+```
+
+規則：
+
+- `slug` 一律作為外層 key
+- `target_url / created_by / updated_by / status` 一律轉小寫
+- `status` 只接受：
+  - `active`
+  - `archived`
+  - `deleted`
+- 若匯入舊格式：
+  - `{ "123": "https://xxx" }`
+  - 會自動轉成新格式
+- `404.html` 已同步升級成可吃舊格式與 `v103` 新格式
+
+補充：
+
+- `v103` 會連 `target_url` 一起轉小寫
+- 這是為了優先降低錯誤率
+- 某些區分大小寫的 URL path 可能會有 edge case
+- 這一版先接受這個取捨，README 明確記錄規則
 
 ## 如何使用
 
@@ -128,6 +173,13 @@ v1 先固定使用最簡字串對字串格式：
   - 內建分頁，每頁固定 10 筆
   - 點選某列的「編輯」後，在右側編輯表單修改
   - 刪除前會有確認提示
+- `v103`
+  - 上方先設定操作者，可選 `force / goma / terra`，也可手動輸入
+  - 一律轉小寫後存入
+  - 若 URL 未填 `http://` 或 `https://`，會自動補 `http://`
+  - `archive` 與 `delete` 不做真刪除，只改 `status`
+  - 匯入舊格式時會自動轉成新格式
+  - 所有資料欄位都統一轉小寫後匯出
 
 驗證規則：
 
@@ -135,6 +187,7 @@ v1 先固定使用最簡字串對字串格式：
 - `slug` 只接受英數、底線 `_`、連字號 `-`
 - `slug` 不可重複
 - URL 必須是完整的 `http` 或 `https`
+- `status` 只接受 `active / archived / deleted`
 
 ### 4. 下載新的 JSON
 
@@ -145,6 +198,9 @@ v1 先固定使用最簡字串對字串格式：
    - 或按 `匯出 links.json`
 2. `v102`
    - 完成表格操作後，按 `匯出新的 links.json`
+3. `v103`
+   - 完成表格操作後，按 `匯出新的 links.json`
+   - 匯出的會是新 object 格式
 
 匯出檔名會自動帶時間戳到「分」，例如：
 
@@ -192,12 +248,13 @@ v1 先固定使用最簡字串對字串格式：
 1. 打開 shortlink editor
 2. 讀取目前 `links.json`
 3. 若你想看資料契約與 JSON 對照，用 `v101`
-4. 若你想直接維護線上資料，用 `v102`
-5. 完成新增 / 修改 / 刪除
-6. 匯出新的 `links.json`
-7. 確認匯出內容沒問題
-8. 把下載好的檔案，手動覆蓋主站 repo root 的 `/links.json`
-9. 提交並部署主站
+4. 若你想直接維護表格，用 `v102`
+5. 若你想優先降低錯誤率與統一格式，用 `v103`
+6. 完成新增 / 修改 / archive / delete
+7. 匯出新的 `links.json`
+8. 確認匯出內容沒問題
+9. 把下載好的檔案，手動覆蓋主站 repo root 的 `/links.json`
+10. 提交並部署主站
 
 如果你平常真的要維護，建議順序是：
 
@@ -205,6 +262,14 @@ v1 先固定使用最簡字串對字串格式：
 2. 在表格中排序、找資料、編輯、新增、刪除
 3. 匯出新的 `links.json`
 4. 再人工覆蓋 root 的 `links.json`
+
+如果你現在要優先防錯，我更建議：
+
+1. 先打開 [falo-shortlink-json-editor-v103.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v103.html)
+2. 先設定操作者
+3. 再做新增、編輯、archive、delete
+4. 匯出新的 `links.json`
+5. 再人工覆蓋 root 的 `links.json`
 
 如果你要做教學或查資料格式，再回頭看 `v101`。
 
@@ -218,9 +283,12 @@ v1 先固定使用最簡字串對字串格式：
 
 1. `404.html` 只處理 `/go/<slug>`
 2. 在命中 `/go/<slug>` 時，fetch root 的 `links.json`
-3. 成功後用 `slug -> target URL` 查表
+3. 成功後支援兩種資料格式：
+   - 舊格式：`slug -> url`
+   - 新格式：`slug -> { target_url, status, ... }`
 4. 有命中就 redirect
-5. 沒命中就顯示 `Shortlink not found`
+5. `status !== active` 視為不可用
+6. 沒命中就顯示 `Shortlink not found`
 
 這樣可以保留：
 

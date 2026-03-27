@@ -1,0 +1,1269 @@
+<!doctype html>
+<!--
+Project: Force Cheng × FALO Tools
+Tool: Shortlink JSON Editor
+Version: v103
+Last Updated: 2026-03-28
+Copyright: © 2026 Force Cheng × FALO. All rights reserved.
+Website: https://force.formosa-ai.com
+
+Design:
+- Single-file first
+- Local-first
+- Mobile-first
+- GitHub Pages ready
+-->
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FALO Shortlink JSON Editor v103 | 防呆一致性版 | Force Cheng × FALO</title>
+  <meta name="description" content="FALO Shortlink JSON Editor v103 是 shortlink 的防呆一致性版維護工具，支援操作者欄位、URL 自動補全、archive/delete 狀態、舊格式轉換與統一小寫匯出。">
+  <style>
+    :root {
+      --bg: #f7fbf6;
+      --panel: #ffffff;
+      --panel-soft: #fbfcff;
+      --line: #dbe4e7;
+      --text: #2f2f38;
+      --muted: #6a6f7b;
+      --brand: #7cc8a2;
+      --brand-deep: #5f6acb;
+      --danger: #b94f63;
+      --shadow: 0 18px 40px rgba(77, 103, 96, 0.09);
+      --radius: 20px;
+      --max-width: 1220px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Iansui", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(124, 200, 162, 0.18), transparent 26%),
+        radial-gradient(circle at top right, rgba(95, 106, 203, 0.12), transparent 24%),
+        linear-gradient(180deg, #fcfffb 0%, #f7fbf6 100%);
+    }
+
+    .page,
+    footer {
+      width: min(var(--max-width), calc(100% - 20px));
+      margin: 0 auto;
+    }
+
+    .page {
+      padding: 18px 0 28px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .hero,
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(124, 200, 162, 0.14);
+      color: var(--brand-deep);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(34px, 8vw, 52px);
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+
+    h2 {
+      font-size: 22px;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+
+    h3 {
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    .lead {
+      color: var(--brand-deep);
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .helper,
+    .note,
+    .status,
+    .tiny,
+    .empty {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .chips,
+    .button-row,
+    .toolbar,
+    .meta-row,
+    .pagination {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .chip {
+      display: inline-flex;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      gap: 18px;
+    }
+
+    .section-box,
+    .editor-box,
+    .preview-box {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .field-grid,
+    .operator-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: inline-block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="file"],
+    textarea,
+    select {
+      width: 100%;
+      font: inherit;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    textarea,
+    select {
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    input[type="file"] {
+      padding: 10px 12px;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.6;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+
+    .button,
+    .button-secondary,
+    .button-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 15px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 160ms ease;
+    }
+
+    .button:hover,
+    .button-secondary:hover,
+    .button-danger:hover {
+      transform: translateY(-1px);
+    }
+
+    .button {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+      box-shadow: 0 12px 28px rgba(95, 106, 203, 0.16);
+    }
+
+    .button-secondary {
+      color: var(--text);
+      background: #fff;
+      border-color: var(--line);
+    }
+
+    .button-danger {
+      color: var(--danger);
+      background: rgba(185, 79, 99, 0.08);
+      border-color: rgba(185, 79, 99, 0.18);
+    }
+
+    .status {
+      min-height: 24px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status[data-tone="ok"] { color: #24704f; }
+    .status[data-tone="warn"] { color: #8a5d12; }
+    .status[data-tone="error"] { color: var(--danger); }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 860px;
+    }
+
+    th,
+    td {
+      padding: 14px 12px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+
+    th {
+      background: #fdfefe;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tr.is-selected {
+      background: rgba(124, 200, 162, 0.08);
+    }
+
+    .url-cell,
+    .meta-cell {
+      word-break: break-all;
+    }
+
+    .meta-row {
+      justify-content: space-between;
+    }
+
+    .badge {
+      display: inline-flex;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: lowercase;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .badge[data-status="active"] {
+      color: #24704f;
+      background: rgba(36, 112, 79, 0.08);
+      border-color: rgba(36, 112, 79, 0.18);
+    }
+
+    .badge[data-status="archived"] {
+      color: #8a5d12;
+      background: rgba(138, 93, 18, 0.08);
+      border-color: rgba(138, 93, 18, 0.18);
+    }
+
+    .badge[data-status="deleted"] {
+      color: var(--danger);
+      background: rgba(185, 79, 99, 0.08);
+      border-color: rgba(185, 79, 99, 0.18);
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 14px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    footer {
+      padding: 0 0 28px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .footer-link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    @media (min-width: 960px) {
+      .page,
+      footer {
+        width: min(var(--max-width), calc(100% - 40px));
+      }
+
+      .page {
+        padding-top: 30px;
+      }
+
+      .layout {
+        grid-template-columns: minmax(0, 1.5fr) minmax(360px, 0.8fr);
+        align-items: start;
+      }
+
+      .field-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .operator-grid {
+        grid-template-columns: 180px minmax(0, 1fr);
+        align-items: end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel hero">
+      <div class="eyebrow">Single File HTML · v103</div>
+      <h1>短網址防呆維護器</h1>
+      <p class="lead">v103 的重點不是多功能，而是先把資料做成比較不容易出錯、格式一致、前後相容。</p>
+      <p class="helper">這一版把操作者、URL 補全、小寫規則、archive / delete 狀態，以及舊格式自動轉換整合進同一個表格維護頁。</p>
+      <div class="chips">
+        <span class="chip">防呆優先</span>
+        <span class="chip">舊格式相容</span>
+        <span class="chip">active / archived / deleted</span>
+      </div>
+    </section>
+
+    <section class="layout">
+      <section class="panel stack">
+        <div class="section-box">
+          <h2>操作者</h2>
+          <div class="operator-grid">
+            <div>
+              <label for="operator-select">預設操作者</label>
+              <select id="operator-select">
+                <option value="force">force</option>
+                <option value="goma">goma</option>
+                <option value="terra">terra</option>
+              </select>
+            </div>
+            <div>
+              <label for="operator-input">手動輸入操作者</label>
+              <input id="operator-input" type="text" placeholder="留空則使用左側選擇">
+            </div>
+          </div>
+          <p class="note">操作者會一律轉成小寫後存入 `created_by` / `updated_by`。這一版先優先降低錯誤率，不做權限系統。</p>
+        </div>
+
+        <div class="section-box">
+          <h2>新增一筆</h2>
+          <div class="field-grid">
+            <div>
+              <label for="new-slug">新 slug</label>
+              <input id="new-slug" type="text" placeholder="例如：demo">
+            </div>
+            <div>
+              <label for="new-url">新 target URL</label>
+              <input id="new-url" type="text" placeholder="example.com/landing">
+            </div>
+          </div>
+          <div class="button-row">
+            <button class="button" id="add-btn" type="button">新增到表格</button>
+          </div>
+          <p class="note">若網址未填 `http://` 或 `https://`，系統會自動補上 `http://`，並在狀態列提醒。</p>
+        </div>
+
+        <div class="section-box">
+          <div class="meta-row">
+            <h2>資料表</h2>
+            <span class="tiny" id="source-label">資料來源：啟動中</span>
+          </div>
+
+          <div class="toolbar">
+            <button class="button-secondary" id="reload-btn" type="button">重新讀取預設 JSON</button>
+            <button class="button-secondary" id="export-btn" type="button">匯出新的 links.json</button>
+          </div>
+
+          <div>
+            <label for="json-file">手動上傳 `links.json`</label>
+            <input id="json-file" type="file" accept="application/json,.json">
+            <p class="note">開頁會先嘗試讀取 repo root 的 `links.json`。若讀不到，可手動上傳。舊格式 `{ "slug": "url" }` 也會自動轉成新格式。</p>
+          </div>
+
+          <div class="meta-row">
+            <div class="toolbar">
+              <label for="sort-field">排序欄位</label>
+              <select id="sort-field">
+                <option value="slug">slug</option>
+                <option value="target_url">target_url</option>
+                <option value="status">status</option>
+                <option value="updated_at">updated_at</option>
+              </select>
+              <button class="button-secondary" id="sort-order-btn" type="button">目前：升冪</button>
+            </div>
+            <span class="tiny" id="summary-text">目前 0 筆</span>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>slug</th>
+                  <th>target_url</th>
+                  <th>status</th>
+                  <th>updated_by / updated_at</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+
+          <p class="empty" id="empty-state" hidden>目前沒有資料。你可以先讀取 root `links.json`、手動上傳，或直接新增第一筆。</p>
+
+          <div class="pagination">
+            <button class="button-secondary" id="prev-page-btn" type="button">上一頁</button>
+            <span class="tiny" id="page-text">第 1 頁 / 共 1 頁</span>
+            <button class="button-secondary" id="next-page-btn" type="button">下一頁</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel stack">
+        <div class="editor-box">
+          <h2>編輯選取列</h2>
+          <p class="note">先按表格中的 `編輯`。這一版不做真刪除，而是透過 `status` 來表示 `active`、`archived`、`deleted`。</p>
+          <div>
+            <label for="edit-slug">slug</label>
+            <input id="edit-slug" type="text" placeholder="請先從左側選一列">
+          </div>
+          <div>
+            <label for="edit-url">target_url</label>
+            <input id="edit-url" type="text" placeholder="example.com/path">
+          </div>
+          <div>
+            <label for="edit-status">status</label>
+            <select id="edit-status">
+              <option value="active">active</option>
+              <option value="archived">archived</option>
+              <option value="deleted">deleted</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button class="button" id="save-edit-btn" type="button">儲存修改</button>
+            <button class="button-secondary" id="archive-btn" type="button">archive</button>
+            <button class="button-danger" id="delete-btn" type="button">delete</button>
+            <button class="button-secondary" id="cancel-edit-btn" type="button">取消編輯</button>
+          </div>
+          <p class="tiny" id="edit-target-label">目前未選取任何列。</p>
+        </div>
+
+        <div class="preview-box">
+          <h2>匯出預覽</h2>
+          <p class="note">這裡保留匯出 JSON 輔助預覽。v103 匯出格式已改成 object，並帶入 `status / created_* / updated_*`。</p>
+          <div class="status" id="status" data-tone="warn">正在嘗試讀取預設 links.json。</div>
+          <details>
+            <summary>展開 JSON 預覽</summary>
+            <textarea id="json-preview" readonly spellcheck="false"></textarea>
+          </details>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 Force Cheng × FALO. All rights reserved.<br>
+    <a class="footer-link" href="https://force.formosa-ai.com">Force Cheng Web : https://force.formosa-ai.com</a>
+  </footer>
+
+  <script>
+    const PAGE_SIZE = 10;
+    const OPERATOR_OPTIONS = ["force", "goma", "terra"];
+
+    const fileInput = document.getElementById("json-file");
+    const addButton = document.getElementById("add-btn");
+    const reloadButton = document.getElementById("reload-btn");
+    const exportButton = document.getElementById("export-btn");
+    const sortFieldSelect = document.getElementById("sort-field");
+    const sortOrderButton = document.getElementById("sort-order-btn");
+    const tableBody = document.getElementById("table-body");
+    const emptyState = document.getElementById("empty-state");
+    const pageText = document.getElementById("page-text");
+    const prevPageButton = document.getElementById("prev-page-btn");
+    const nextPageButton = document.getElementById("next-page-btn");
+    const summaryText = document.getElementById("summary-text");
+    const sourceLabel = document.getElementById("source-label");
+    const statusText = document.getElementById("status");
+    const jsonPreview = document.getElementById("json-preview");
+    const operatorSelect = document.getElementById("operator-select");
+    const operatorInput = document.getElementById("operator-input");
+    const newSlugInput = document.getElementById("new-slug");
+    const newUrlInput = document.getElementById("new-url");
+    const editSlugInput = document.getElementById("edit-slug");
+    const editUrlInput = document.getElementById("edit-url");
+    const editStatusSelect = document.getElementById("edit-status");
+    const saveEditButton = document.getElementById("save-edit-btn");
+    const archiveButton = document.getElementById("archive-btn");
+    const deleteButton = document.getElementById("delete-btn");
+    const cancelEditButton = document.getElementById("cancel-edit-btn");
+    const editTargetLabel = document.getElementById("edit-target-label");
+
+    const state = {
+      nextId: 1,
+      entries: [],
+      source: "sample",
+      sortField: "slug",
+      sortOrder: "asc",
+      page: 1,
+      selectedId: null
+    };
+
+    function setStatus(message, tone) {
+      statusText.textContent = message;
+      statusText.dataset.tone = tone || "warn";
+    }
+
+    function setSourceLabel(message) {
+      sourceLabel.textContent = "資料來源：" + message;
+    }
+
+    function pad2(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function getIsoTimestamp() {
+      return new Date().toISOString().toLowerCase();
+    }
+
+    function buildTimestampedFilename() {
+      const now = new Date();
+      const stamp = [
+        now.getFullYear(),
+        pad2(now.getMonth() + 1),
+        pad2(now.getDate())
+      ].join("") + "-" + [
+        pad2(now.getHours()),
+        pad2(now.getMinutes())
+      ].join("");
+
+      return "links-" + stamp + ".json";
+    }
+
+    function normalizeLower(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function getCurrentOperator() {
+      const typed = normalizeLower(operatorInput.value);
+      if (typed) {
+        return typed;
+      }
+      return normalizeLower(operatorSelect.value || OPERATOR_OPTIONS[0]);
+    }
+
+    function ensureProtocol(rawUrl) {
+      const lowered = normalizeLower(rawUrl);
+      if (!lowered) {
+        return { url: "", didAppend: false };
+      }
+
+      if (lowered.startsWith("http://") || lowered.startsWith("https://")) {
+        return { url: lowered, didAppend: false };
+      }
+
+      return {
+        url: "http://" + lowered,
+        didAppend: true
+      };
+    }
+
+    function validateUrl(url) {
+      try {
+        const parsed = new URL(url);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function validateSlug(slug, ignoreId) {
+      if (!slug) {
+        return "slug 不可空白。";
+      }
+
+      if (!/^[a-z0-9_-]+$/.test(slug)) {
+        return "slug 只接受英數、底線 `_`、連字號 `-`，且一律轉小寫。";
+      }
+
+      const exists = state.entries.some(function(entry) {
+        return entry.id !== ignoreId && entry.slug === slug;
+      });
+
+      if (exists) {
+        return "slug 不可重複，請換一個新的 slug。";
+      }
+
+      return "";
+    }
+
+    function validateStatus(status) {
+      const normalized = normalizeLower(status);
+      if (["active", "archived", "deleted"].includes(normalized)) {
+        return "";
+      }
+      return "status 只接受 active / archived / deleted。";
+    }
+
+    function createEntry(record) {
+      const entry = {
+        id: state.nextId++,
+        slug: record.slug,
+        target_url: record.target_url,
+        status: record.status,
+        created_at: record.created_at,
+        created_by: record.created_by,
+        updated_at: record.updated_at,
+        updated_by: record.updated_by
+      };
+      state.entries.push(entry);
+      return entry;
+    }
+
+    function replaceEntries(records) {
+      state.entries = [];
+      records.forEach(function(record) {
+        createEntry(record);
+      });
+      state.page = 1;
+      state.selectedId = null;
+      render();
+    }
+
+    function makeRecord(slug, targetUrl, operator, status, createdAt, createdBy, updatedAt, updatedBy) {
+      return {
+        slug: normalizeLower(slug),
+        target_url: normalizeLower(targetUrl),
+        status: normalizeLower(status || "active"),
+        created_at: normalizeLower(createdAt || getIsoTimestamp()),
+        created_by: normalizeLower(createdBy || operator),
+        updated_at: normalizeLower(updatedAt || getIsoTimestamp()),
+        updated_by: normalizeLower(updatedBy || operator)
+      };
+    }
+
+    function buildStarterRecords() {
+      const operator = "force";
+      const timestamp = getIsoTimestamp();
+      return [
+        makeRecord("123", "https://www.google.com/", operator, "active", timestamp, operator, timestamp, operator),
+        makeRecord("demo", "https://force.formosa-ai.com", operator, "active", timestamp, operator, timestamp, operator),
+        makeRecord("force", "https://force.formosa-ai.com/about/", operator, "active", timestamp, operator, timestamp, operator),
+        makeRecord("qrcode", "https://falo-taiwan.github.io/tools/qrcode/falo-qrcode-v102.html", operator, "active", timestamp, operator, timestamp, operator),
+        makeRecord("shortlink", "https://falo-taiwan.github.io/tools/shortlink/falo-shortlink-json-editor-v103.html", operator, "active", timestamp, operator, timestamp, operator)
+      ];
+    }
+
+    function convertLegacyObjectToRecords(raw, operator) {
+      const now = getIsoTimestamp();
+      const records = [];
+
+      Object.keys(raw).forEach(function(key) {
+        const value = raw[key];
+
+        if (typeof value === "string") {
+          const normalizedUrlResult = ensureProtocol(value);
+          records.push(makeRecord(
+            key,
+            normalizedUrlResult.url,
+            operator,
+            "active",
+            now,
+            operator,
+            now,
+            operator
+          ));
+          return;
+        }
+
+        if (!value || typeof value !== "object" || Array.isArray(value)) {
+          throw new Error("每一筆資料必須是字串 URL，或 v103 object 格式。");
+        }
+
+        const normalizedUrlResult = ensureProtocol(value.target_url || "");
+        records.push(makeRecord(
+          key,
+          normalizedUrlResult.url,
+          operator,
+          value.status || "active",
+          value.created_at || now,
+          value.created_by || operator,
+          value.updated_at || now,
+          value.updated_by || operator
+        ));
+      });
+
+      return records;
+    }
+
+    function validateImportedObject(raw) {
+      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        throw new Error("JSON 格式必須是 object。");
+      }
+
+      return convertLegacyObjectToRecords(raw, getCurrentOperator());
+    }
+
+    function buildExportObject() {
+      const output = {};
+      const seen = new Set();
+
+      for (const entry of state.entries) {
+        const slug = normalizeLower(entry.slug);
+        const targetUrlResult = ensureProtocol(entry.target_url);
+        const targetUrl = targetUrlResult.url;
+        const status = normalizeLower(entry.status);
+        const createdAt = normalizeLower(entry.created_at);
+        const createdBy = normalizeLower(entry.created_by);
+        const updatedAt = normalizeLower(entry.updated_at);
+        const updatedBy = normalizeLower(entry.updated_by);
+
+        const slugError = validateSlug(slug, entry.id);
+        if (slugError) {
+          return { ok: false, message: slugError };
+        }
+
+        if (seen.has(slug)) {
+          return { ok: false, message: "slug 不可重複，請檢查 `" + slug + "`。" };
+        }
+
+        if (!targetUrl) {
+          return { ok: false, message: "有一筆 target_url 是空的，請先補上。" };
+        }
+
+        if (!validateUrl(targetUrl)) {
+          return { ok: false, message: "target_url 必須是完整的 http 或 https 網址。" };
+        }
+
+        const statusError = validateStatus(status);
+        if (statusError) {
+          return { ok: false, message: statusError };
+        }
+
+        if (!createdBy || !updatedBy) {
+          return { ok: false, message: "created_by / updated_by 不可空白。" };
+        }
+
+        seen.add(slug);
+        output[slug] = {
+          target_url: targetUrl,
+          status: status,
+          created_at: createdAt,
+          created_by: createdBy,
+          updated_at: updatedAt,
+          updated_by: updatedBy
+        };
+      }
+
+      return { ok: true, data: output };
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function getSortedEntries() {
+      const key = state.sortField;
+      const orderFactor = state.sortOrder === "asc" ? 1 : -1;
+      return state.entries.slice().sort(function(a, b) {
+        const left = normalizeLower(a[key]);
+        const right = normalizeLower(b[key]);
+        if (left < right) return -1 * orderFactor;
+        if (left > right) return 1 * orderFactor;
+        return 0;
+      });
+    }
+
+    function getPageCount() {
+      return Math.max(1, Math.ceil(state.entries.length / PAGE_SIZE));
+    }
+
+    function getVisibleEntries() {
+      const sorted = getSortedEntries();
+      const pageCount = getPageCount();
+      if (state.page > pageCount) {
+        state.page = pageCount;
+      }
+      const start = (state.page - 1) * PAGE_SIZE;
+      return sorted.slice(start, start + PAGE_SIZE);
+    }
+
+    function renderTable() {
+      const visibleEntries = getVisibleEntries();
+      tableBody.innerHTML = "";
+
+      visibleEntries.forEach(function(entry) {
+        const row = document.createElement("tr");
+        if (entry.id === state.selectedId) {
+          row.className = "is-selected";
+        }
+
+        row.innerHTML = [
+          "<td><strong>" + escapeHtml(entry.slug) + "</strong></td>",
+          '<td class="url-cell">' + escapeHtml(entry.target_url) + "</td>",
+          '<td><span class="badge" data-status="' + escapeHtml(entry.status) + '">' + escapeHtml(entry.status) + "</span></td>",
+          '<td class="meta-cell">' + escapeHtml(entry.updated_by) + "<br>" + escapeHtml(entry.updated_at) + "</td>",
+          '<td><div class="button-row">' +
+            '<button class="button-secondary" type="button" data-edit-id="' + entry.id + '">編輯</button>' +
+            '<button class="button-secondary" type="button" data-archive-id="' + entry.id + '">archive</button>' +
+            '<button class="button-danger" type="button" data-delete-id="' + entry.id + '">delete</button>' +
+          "</div></td>"
+        ].join("");
+
+        tableBody.appendChild(row);
+
+        row.querySelector("[data-edit-id]").addEventListener("click", function() {
+          selectEntry(entry.id);
+        });
+
+        row.querySelector("[data-archive-id]").addEventListener("click", function() {
+          changeEntryStatus(entry.id, "archived");
+        });
+
+        row.querySelector("[data-delete-id]").addEventListener("click", function() {
+          changeEntryStatus(entry.id, "deleted");
+        });
+      });
+
+      emptyState.hidden = state.entries.length > 0;
+    }
+
+    function renderPagination() {
+      const pageCount = getPageCount();
+      pageText.textContent = "第 " + state.page + " 頁 / 共 " + pageCount + " 頁";
+      prevPageButton.disabled = state.page <= 1;
+      nextPageButton.disabled = state.page >= pageCount;
+    }
+
+    function renderSummary() {
+      summaryText.textContent = "目前 " + state.entries.length + " 筆";
+      sortOrderButton.textContent = "目前：" + (state.sortOrder === "asc" ? "升冪" : "降冪");
+    }
+
+    function renderPreview() {
+      const result = buildExportObject();
+      if (!result.ok) {
+        jsonPreview.value = "";
+        setStatus(result.message, "error");
+        return;
+      }
+      jsonPreview.value = JSON.stringify(result.data, null, 2);
+      setStatus("格式正常，可以匯出新的 links.json。", "ok");
+    }
+
+    function renderEditor() {
+      const selected = state.entries.find(function(entry) {
+        return entry.id === state.selectedId;
+      });
+
+      if (!selected) {
+        editSlugInput.value = "";
+        editUrlInput.value = "";
+        editStatusSelect.value = "active";
+        editTargetLabel.textContent = "目前未選取任何列。";
+        return;
+      }
+
+      editSlugInput.value = selected.slug;
+      editUrlInput.value = selected.target_url;
+      editStatusSelect.value = selected.status;
+      editTargetLabel.textContent = "目前編輯：" + selected.slug;
+    }
+
+    function render() {
+      renderSummary();
+      renderTable();
+      renderPagination();
+      renderEditor();
+      renderPreview();
+    }
+
+    function selectEntry(entryId) {
+      state.selectedId = entryId;
+      render();
+      editSlugInput.focus();
+      setStatus("已選取一列，可在右側編輯後儲存。", "warn");
+    }
+
+    function getSelectedEntry() {
+      return state.entries.find(function(entry) {
+        return entry.id === state.selectedId;
+      });
+    }
+
+    function touchEntry(entry, operator) {
+      entry.updated_at = getIsoTimestamp();
+      entry.updated_by = operator;
+    }
+
+    function changeEntryStatus(entryId, nextStatus) {
+      const entry = state.entries.find(function(item) {
+        return item.id === entryId;
+      });
+
+      if (!entry) {
+        return;
+      }
+
+      const operator = getCurrentOperator();
+      const confirmed = window.confirm("確定要把 `" + entry.slug + "` 標記成 `" + nextStatus + "` 嗎？");
+      if (!confirmed) {
+        return;
+      }
+
+      entry.status = normalizeLower(nextStatus);
+      touchEntry(entry, operator);
+
+      if (entryId === state.selectedId) {
+        render();
+      } else {
+        render();
+      }
+
+      setStatus("已將 `" + entry.slug + "` 標記為 `" + entry.status + "`。這一版不做真刪除，只透過 status 控制。", "ok");
+    }
+
+    function downloadTextFile(filename, content) {
+      const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      window.setTimeout(function() {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }
+
+    function getDefaultJsonCandidates() {
+      const candidates = [];
+
+      if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+        candidates.push("/links.json");
+      }
+
+      candidates.push(new URL("../../links.json", window.location.href).href);
+      return candidates;
+    }
+
+    async function tryFetchJson(url) {
+      const response = await fetch(url, { cache: "no-store" });
+
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+
+      return response.json();
+    }
+
+    async function loadDefaultJson() {
+      setStatus("正在嘗試讀取預設 links.json。", "warn");
+      setSourceLabel("讀取中");
+
+      const candidates = getDefaultJsonCandidates();
+
+      for (const candidate of candidates) {
+        try {
+          const parsed = await tryFetchJson(candidate);
+          const validated = validateImportedObject(parsed);
+          replaceEntries(validated);
+          state.source = "default";
+          setSourceLabel("預設 links.json");
+          setStatus("已成功讀取預設 links.json。若匯入的是舊格式，已在記憶體中自動轉成 v103 結構。", "ok");
+          return;
+        } catch (error) {
+          continue;
+        }
+      }
+
+      replaceEntries(buildStarterRecords());
+      state.source = "sample";
+      setSourceLabel("內建 sample");
+      setStatus("讀取預設 links.json 失敗。這在本機 file:// 模式很常見，請改用手動上傳，或先用 sample 操作。", "warn");
+    }
+
+    fileInput.addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(loadEvent) {
+        try {
+          const parsed = JSON.parse(loadEvent.target.result);
+          const validated = validateImportedObject(parsed);
+          replaceEntries(validated);
+          state.source = "upload";
+          setSourceLabel("手動上傳 JSON");
+          setStatus("JSON 已成功匯入。若原本是舊格式，已自動轉成 v103 結構。", "ok");
+        } catch (error) {
+          setStatus("匯入失敗：" + error.message, "error");
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    });
+
+    addButton.addEventListener("click", function() {
+      const operator = getCurrentOperator();
+      const slug = normalizeLower(newSlugInput.value);
+      const slugError = validateSlug(slug, null);
+
+      if (slugError) {
+        setStatus("無法新增：" + slugError, "error");
+        newSlugInput.focus();
+        return;
+      }
+
+      const normalizedUrlResult = ensureProtocol(newUrlInput.value);
+      if (!normalizedUrlResult.url) {
+        setStatus("無法新增：target_url 不可空白。", "error");
+        newUrlInput.focus();
+        return;
+      }
+
+      if (!validateUrl(normalizedUrlResult.url)) {
+        setStatus("無法新增：target_url 必須是合法網址。", "error");
+        newUrlInput.focus();
+        return;
+      }
+
+      const timestamp = getIsoTimestamp();
+      const entry = createEntry(makeRecord(
+        slug,
+        normalizedUrlResult.url,
+        operator,
+        "active",
+        timestamp,
+        operator,
+        timestamp,
+        operator
+      ));
+
+      state.selectedId = entry.id;
+      state.page = getPageCount();
+      render();
+
+      newSlugInput.value = "";
+      newUrlInput.value = "";
+
+      if (normalizedUrlResult.didAppend) {
+        setStatus("已新增 `" + slug + "`，並自動補上 `http://`。存入時已統一轉小寫。", "ok");
+      } else {
+        setStatus("已新增 `" + slug + "`。存入時已統一轉小寫。", "ok");
+      }
+
+      newSlugInput.focus();
+    });
+
+    saveEditButton.addEventListener("click", function() {
+      const selected = getSelectedEntry();
+
+      if (!selected) {
+        setStatus("請先從表格選一列，再進行編輯。", "warn");
+        return;
+      }
+
+      const operator = getCurrentOperator();
+      const slug = normalizeLower(editSlugInput.value);
+      const slugError = validateSlug(slug, selected.id);
+
+      if (slugError) {
+        setStatus("無法儲存：" + slugError, "error");
+        editSlugInput.focus();
+        return;
+      }
+
+      const normalizedUrlResult = ensureProtocol(editUrlInput.value);
+      if (!normalizedUrlResult.url) {
+        setStatus("無法儲存：target_url 不可空白。", "error");
+        editUrlInput.focus();
+        return;
+      }
+
+      if (!validateUrl(normalizedUrlResult.url)) {
+        setStatus("無法儲存：target_url 必須是合法網址。", "error");
+        editUrlInput.focus();
+        return;
+      }
+
+      const nextStatus = normalizeLower(editStatusSelect.value);
+      const statusError = validateStatus(nextStatus);
+      if (statusError) {
+        setStatus("無法儲存：" + statusError, "error");
+        return;
+      }
+
+      selected.slug = slug;
+      selected.target_url = normalizedUrlResult.url;
+      selected.status = nextStatus;
+      touchEntry(selected, operator);
+      render();
+
+      if (normalizedUrlResult.didAppend) {
+        setStatus("已更新 `" + slug + "`，並自動補上 `http://`。所有欄位已統一轉小寫。", "ok");
+      } else {
+        setStatus("已更新 `" + slug + "`。所有欄位已統一轉小寫。", "ok");
+      }
+    });
+
+    archiveButton.addEventListener("click", function() {
+      const selected = getSelectedEntry();
+      if (!selected) {
+        setStatus("請先選取一列，再執行 archive。", "warn");
+        return;
+      }
+      changeEntryStatus(selected.id, "archived");
+    });
+
+    deleteButton.addEventListener("click", function() {
+      const selected = getSelectedEntry();
+      if (!selected) {
+        setStatus("請先選取一列，再執行 delete。", "warn");
+        return;
+      }
+      changeEntryStatus(selected.id, "deleted");
+    });
+
+    cancelEditButton.addEventListener("click", function() {
+      state.selectedId = null;
+      render();
+      setStatus("已取消編輯。", "warn");
+    });
+
+    reloadButton.addEventListener("click", function() {
+      loadDefaultJson();
+    });
+
+    exportButton.addEventListener("click", function() {
+      const result = buildExportObject();
+
+      if (!result.ok) {
+        setStatus("無法匯出：" + result.message, "error");
+        return;
+      }
+
+      const filename = buildTimestampedFilename();
+      downloadTextFile(filename, JSON.stringify(result.data, null, 2));
+      setStatus("已下載 " + filename + "。請用新檔覆蓋主站 root 的 links.json。這份檔案已符合 v103 object 格式。", "ok");
+    });
+
+    sortFieldSelect.addEventListener("change", function() {
+      state.sortField = sortFieldSelect.value;
+      state.page = 1;
+      render();
+      setStatus("已依 `" + state.sortField + "` 重新排序。", "ok");
+    });
+
+    sortOrderButton.addEventListener("click", function() {
+      state.sortOrder = state.sortOrder === "asc" ? "desc" : "asc";
+      state.page = 1;
+      render();
+      setStatus("排序方向已改為" + (state.sortOrder === "asc" ? "升冪" : "降冪") + "。", "ok");
+    });
+
+    prevPageButton.addEventListener("click", function() {
+      if (state.page > 1) {
+        state.page -= 1;
+        render();
+      }
+    });
+
+    nextPageButton.addEventListener("click", function() {
+      const pageCount = getPageCount();
+      if (state.page < pageCount) {
+        state.page += 1;
+        render();
+      }
+    });
+
+    loadDefaultJson();
+  </script>
+</body>
+</html>
