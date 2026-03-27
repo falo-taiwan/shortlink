@@ -2,8 +2,8 @@
 <!--
 Project: FALO x Force Cheng Tools
 Tool: Shortlink GAS Editor
-Version: v106
-Last Updated: 2026-03-27 20:13 TPE
+Version: v201
+Last Updated: 2026-03-27 20:38 TPE
 Copyright: © 2026 FALO x Force Cheng. All rights reserved.
 Website: https://force.formosa-ai.com
 
@@ -14,16 +14,16 @@ Design:
 - GitHub Pages ready
 
 Notes:
-- This version records a key finding from router testing: valid shortlinks can still fail when GAS lookup times out.
-- The main data is still Google Sheets via GAS, but router timeout settings directly affect real-world success rate.
-- v106 keeps the same editor workflow while making that timeout lesson explicit in the source comments.
+- This version is prepared for external testers.
+- The password field is shown as plain text and prefilled with 123 for testing convenience.
+- Testing note: during the test period, the password is 123.
 -->
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FALO Shortlink GAS Editor v106 | Google Sheet 維護版 | FALO x Force Cheng</title>
-  <meta name="description" content="FALO Shortlink GAS Editor v106 是 shortlink 的 Google Sheet 維護版，支援透過 GAS 讀取、建立、修改、archive、restore、delete、export snapshot 與 backup，並記錄這次 timeout 經驗。">
+  <title>FALO Shortlink GAS Editor v201 | 外部測試版 | FALO x Force Cheng</title>
+  <meta name="description" content="FALO Shortlink GAS Editor v201 是給外部測試者使用的 shortlink 維護頁，可直接讀取與更新 Google Sheet，並協助測試短網址建立、修改、封存與匯出流程。">
   <style>
     :root {
       --bg: #f7fbf6;
@@ -415,14 +415,14 @@ Notes:
 <body>
   <main class="page">
     <section class="panel hero">
-      <div class="eyebrow">Single File HTML · v106</div>
-      <h1>短網址 GAS 維護器</h1>
-      <p class="lead">v106 延續 GAS 直連維護流程，並把這次 timeout 的系統發現正式記錄下來。</p>
-      <p class="helper">這一版的重點不是重做流程，而是把「主資料有在、但查詢 timeout 還是會失敗」這件事明確寫進工具版本。資料主來源仍然是 GAS / Sheet，snapshot 匯出仍是輔助。</p>
+      <div class="eyebrow">Single File HTML · v201</div>
+      <h1>短網址測試維護站</h1>
+      <p class="lead">這個網站是給外部測試者使用的 shortlink 維護頁，讓你可以直接查看、建立、修改與測試短網址資料。</p>
+      <p class="helper">資料主來源是 Google Sheet。你可以用這頁讀取目前 shortlink 清單、建立新網址、調整狀態、匯出 snapshot，並協助確認整個 shortlink 流程是否正常運作。</p>
       <div class="chips">
-        <span class="chip">GAS 直連</span>
+        <span class="chip">外部測試版</span>
         <span class="chip">Google Sheet 主資料源</span>
-        <span class="chip">snapshot / backup</span>
+        <span class="chip">shortlink 測試 / 維護</span>
       </div>
     </section>
 
@@ -444,11 +444,8 @@ Notes:
               <input id="operator-input" type="text" placeholder="留空則使用左側選擇">
             </div>
             <div>
-              <label for="password-input">管理密碼</label>
-              <div class="password-row">
-                <input id="password-input" type="password" placeholder="例如：123">
-                <button class="button-secondary" id="toggle-password-btn" type="button">顯示</button>
-              </div>
+              <label for="password-input">測試期間密碼：123</label>
+              <input id="password-input" type="text" value="123" placeholder="測試期間密碼 123">
             </div>
             <div>
               <label for="gas-url-input">GAS Web App URL</label>
@@ -460,7 +457,7 @@ Notes:
             <button class="button-secondary" id="backup-btn" type="button">執行 backup_now</button>
             <span class="inline-status" id="connection-status-inline" data-tone="warn"></span>
           </div>
-          <p class="note">這一版會把操作者與密碼送到 GAS admin API。Google 帳號白名單可留待下一版，現在先用簡單密碼模式。</p>
+          <p class="note">這個網站會把操作者與密碼送到 GAS admin API，藉此讀取或更新 Google Sheet。測試期間先使用簡單密碼模式，方便外部測試者快速進入流程。</p>
         </div>
 
         <div class="section-box">
@@ -483,7 +480,7 @@ Notes:
             <button class="button" id="add-btn" type="button">新增到 Google Sheet</button>
             <span class="inline-status" id="add-status-inline" data-tone="warn"></span>
           </div>
-          <p class="note">若網址未填 `http://` 或 `https://`，系統會自動補上 `http://`。成功後會直接寫入 Google Sheet，然後重新讀回表格。</p>
+          <p class="note">若網址未填 `http://` 或 `https://`，系統會自動補上 `http://`。成功後會直接寫入 Google Sheet，然後重新讀回表格，方便你立即確認資料是否有更新。</p>
         </div>
 
         <div class="section-box">
@@ -552,7 +549,7 @@ Notes:
       <section class="panel stack">
         <div class="editor-box">
           <h2>編輯選取列</h2>
-          <p class="note">先按表格中的 `編輯`。`archive / delete / restore` 都會直接送到 GAS，再由 GAS 更新 Google Sheet。</p>
+          <p class="note">先按表格中的 `編輯`。`archive / delete / restore` 都會直接送到 GAS，再由 GAS 更新 Google Sheet。這樣外部測試者也能直接驗證 shortlink 資料流是否正常。</p>
           <div>
             <label for="edit-slug">slug</label>
             <input id="edit-slug" type="text" placeholder="請先從左側選一列">
@@ -587,7 +584,7 @@ Notes:
         <div class="preview-box">
           <h2>snapshot 預覽</h2>
           <p class="note">這裡顯示目前表格可對應出的 snapshot 預覽。按下匯出時，會直接呼叫 GAS `export_snapshot`。</p>
-          <div class="status" id="status" data-tone="warn">請先輸入操作者、密碼與 GAS URL，然後讀取 Google Sheet。</div>
+          <div class="status" id="status" data-tone="warn">請先確認操作者、測試密碼與 GAS URL，然後讀取 Google Sheet。</div>
           <details>
             <summary>展開 snapshot 預覽</summary>
             <textarea id="json-preview" readonly spellcheck="false"></textarea>
@@ -613,7 +610,6 @@ Notes:
     const exportButton = document.getElementById("export-btn");
     const loadGasButton = document.getElementById("load-gas-btn");
     const backupButton = document.getElementById("backup-btn");
-    const togglePasswordButton = document.getElementById("toggle-password-btn");
     const sortFieldSelect = document.getElementById("sort-field");
     const sortOrderButton = document.getElementById("sort-order-btn");
     const searchInput = document.getElementById("search-input");
@@ -1249,7 +1245,7 @@ Notes:
       const nextNote = normalizeFreeText(editNoteInput.value);
 
       if (slug !== selected.slug) {
-        setStatus("v106 先不支援直接改 slug。若要換 slug，請新增新筆再 archive 舊筆。", "warn");
+        setStatus("v201 先不支援直接改 slug。若要換 slug，請新增新筆再 archive 舊筆。", "warn");
         return;
       }
 
@@ -1377,12 +1373,6 @@ Notes:
       state.page = 1;
       render();
       setStatus("排序方向已改為" + (state.sortOrder === "asc" ? "升冪" : "降冪") + "。", "ok");
-    });
-
-    togglePasswordButton.addEventListener("click", function() {
-      const isPassword = passwordInput.type === "password";
-      passwordInput.type = isPassword ? "text" : "password";
-      togglePasswordButton.textContent = isPassword ? "隱藏" : "顯示";
     });
 
     prevPageButton.addEventListener("click", function() {
