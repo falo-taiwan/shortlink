@@ -27,11 +27,16 @@
 - `falo-shortlink-json-editor-v104.html`
 - `falo-shortlink-json-editor-v105.html`
 - `falo-shortlink-json-editor-v106.html`
+- `falo-shortlink-json-editor-v201.html`
 
 2. router
 - [404.html](/Users/force/AI-CodeX/tools/shortlink/404.html)
 - 這是 shortlink 專案內唯一維護的 router 原始檔
 - GitHub Pages 真正部署時，再手動放到網站 root 的 `/404.html`
+- [404_gas_first_v101.htm](/Users/force/AI-CodeX/tools/shortlink/404_gas_first_v101.htm)
+  - 保留的 GAS-first 對照版
+- [404_js_first_v101.htm](/Users/force/AI-CodeX/tools/shortlink/404_js_first_v101.htm)
+  - 保留的 JSON-first 版本檔
 
 3. GAS 範本
 - [gas-v2/README.md](/Users/force/AI-CodeX/tools/shortlink/gas-v2/README.md)
@@ -65,6 +70,8 @@
 - 意義：`v1.05`
 - `v106`
 - 意義：`v1.06`
+- `v201`
+- 意義：外部測試版 `v2.01`
 
 主檔：
 
@@ -74,7 +81,10 @@
 - [falo-shortlink-json-editor-v104.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v104.html)
 - [falo-shortlink-json-editor-v105.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v105.html)
 - [falo-shortlink-json-editor-v106.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v106.html)
+- [falo-shortlink-json-editor-v201.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-json-editor-v201.html)
 - [404.html](/Users/force/AI-CodeX/tools/shortlink/404.html)
+- [404_gas_first_v101.htm](/Users/force/AI-CodeX/tools/shortlink/404_gas_first_v101.htm)
+- [404_js_first_v101.htm](/Users/force/AI-CodeX/tools/shortlink/404_js_first_v101.htm)
 - [404-readme.md](/Users/force/AI-CodeX/tools/shortlink/404-readme.md)
 - [falo-shortlink-guide-v101.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v101.html)
 - [falo-shortlink-guide-v102.html](/Users/force/AI-CodeX/tools/shortlink/falo-shortlink-guide-v102.html)
@@ -103,21 +113,31 @@
   - v105 的延伸版
   - 把這次 timeout 是關鍵因素的發現正式寫進版本
   - 適合拿來當「GAS 主資料源不等於一定即時成功」的教材版
+- `falo-shortlink-json-editor-v201.html`
+  - 給外部使用者測試的版本
+  - 把網站用途直接寫給使用者看
+  - 密碼欄改成明碼顯示，並預填測試期間密碼 `123`
 - `404.html`
   - shortlink router 維護來源
   - 用來接管 `/go/<slug>`
-  - 目前支援：
+  - 目前主線策略改成：
+    - `links.json` first
     - GAS JSONP lookup
-    - GAS fetch fallback
-    - `links.json` fallback
+    - GAS fetch lookup
     - 中轉頁版本時間顯示
+- `404_gas_first_v101.htm`
+  - 保留舊版 router
+  - 策略是先查 GAS，再 fallback JSON
+- `404_js_first_v101.htm`
+  - 保留新版 router 版本檔
+  - 策略是先查 JSON，再查 GAS
 - `gas-v2/`
   - Google Sheets + Apps Script 版最小可用範本
   - 先收成單一 `main.gs` 版
   - 檔內用模組區塊註解分功能
   - 提供公開 lookup、簡單密碼 admin、snapshot 匯出與 backup
 
-## v101 / v102 / v103 / v104 / v105 / v106 的差異
+## v101 / v102 / v103 / v104 / v105 / v106 / v201 的差異
 
 - `v101`
   - 比較像工程底稿 / JSON 對照版
@@ -147,6 +167,10 @@
   - 延續 `v105` 的 GAS 直連維護流程
   - 額外把這次 shortlink 成敗與 timeout 之間的關係正式寫進版本註解
   - 用來提醒：資料存在，不代表查詢一定能在短時間內成功
+- `v201`
+  - 給外部測試者使用
+  - 文字改成更偏使用者導向，不是內部工程維護口吻
+  - 密碼欄改成明碼輸入框，並預填 `123`
 
 一句話理解：
 
@@ -156,6 +180,7 @@
 - `v104` = 操作優化視角
 - `v105` = GAS 直連維護視角
 - `v106` = GAS 直連 + timeout 教學視角
+- `v201` = GAS 外部測試視角
 - `gas-v2` = GAS 主資料源視角
 
 用途：
