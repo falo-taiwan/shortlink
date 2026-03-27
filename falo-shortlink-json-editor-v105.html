@@ -265,6 +265,18 @@ Design:
     .status[data-tone="warn"] { color: var(--warn); }
     .status[data-tone="error"] { color: var(--danger); }
 
+    .inline-status {
+      min-height: 22px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .inline-status[data-tone="ok"] { color: var(--ok); }
+    .inline-status[data-tone="warn"] { color: var(--warn); }
+    .inline-status[data-tone="error"] { color: var(--danger); }
+
     .table-wrap {
       overflow: auto;
       border: 1px solid var(--line);
@@ -441,6 +453,7 @@ Design:
           <div class="button-row">
             <button class="button" id="load-gas-btn" type="button">讀取 Google Sheet</button>
             <button class="button-secondary" id="backup-btn" type="button">執行 backup_now</button>
+            <span class="inline-status" id="connection-status-inline" data-tone="warn"></span>
           </div>
           <p class="note">這一版會把操作者與密碼送到 GAS admin API。Google 帳號白名單可留待下一版，現在先用簡單密碼模式。</p>
         </div>
@@ -463,6 +476,7 @@ Design:
           </div>
           <div class="button-row">
             <button class="button" id="add-btn" type="button">新增到 Google Sheet</button>
+            <span class="inline-status" id="add-status-inline" data-tone="warn"></span>
           </div>
           <p class="note">若網址未填 `http://` 或 `https://`，系統會自動補上 `http://`。成功後會直接寫入 Google Sheet，然後重新讀回表格。</p>
         </div>
@@ -476,6 +490,7 @@ Design:
           <div class="toolbar">
             <button class="button-secondary" id="reload-btn" type="button">重新讀取 GAS</button>
             <button class="button-secondary" id="export-btn" type="button">匯出 snapshot JSON</button>
+            <span class="inline-status" id="table-status-inline" data-tone="warn"></span>
           </div>
 
           <div>
@@ -559,6 +574,7 @@ Design:
             <button class="button-danger" id="delete-btn" type="button">delete</button>
             <button class="button" id="save-edit-btn" type="button">儲存到 Google Sheet</button>
             <button class="button-secondary" id="cancel-edit-btn" type="button">取消編輯</button>
+            <span class="inline-status" id="edit-status-inline" data-tone="warn"></span>
           </div>
           <p class="tiny" id="edit-target-label">目前未選取任何列。</p>
         </div>
@@ -604,6 +620,10 @@ Design:
     const summaryText = document.getElementById("summary-text");
     const sourceLabel = document.getElementById("source-label");
     const statusText = document.getElementById("status");
+    const connectionInlineStatus = document.getElementById("connection-status-inline");
+    const addInlineStatus = document.getElementById("add-status-inline");
+    const tableInlineStatus = document.getElementById("table-status-inline");
+    const editInlineStatus = document.getElementById("edit-status-inline");
     const jsonPreview = document.getElementById("json-preview");
     const operatorSelect = document.getElementById("operator-select");
     const operatorInput = document.getElementById("operator-input");
@@ -637,6 +657,21 @@ Design:
     function setStatus(message, tone) {
       statusText.textContent = message;
       statusText.dataset.tone = tone || "warn";
+    }
+
+    function setInlineStatus(element, message, tone) {
+      if (!element) {
+        return;
+      }
+      element.textContent = message || "";
+      element.dataset.tone = tone || "warn";
+    }
+
+    function clearInlineStatuses() {
+      setInlineStatus(connectionInlineStatus, "", "warn");
+      setInlineStatus(addInlineStatus, "", "warn");
+      setInlineStatus(tableInlineStatus, "", "warn");
+      setInlineStatus(editInlineStatus, "", "warn");
     }
 
     function setSourceLabel(message) {
@@ -1045,6 +1080,8 @@ Design:
     async function loadFromGas() {
       try {
         setStatus("正在從 GAS 讀取 Google Sheet。", "warn");
+        setInlineStatus(connectionInlineStatus, "正在讀取 Google Sheet...", "warn");
+        setInlineStatus(tableInlineStatus, "正在同步表格資料...", "warn");
         const data = await callGas("admin_list");
         const records = (data.records || []).map(function(record) {
           return makeRecord(
@@ -1064,8 +1101,12 @@ Design:
         state.source = "gas";
         setSourceLabel("Google Sheet（透過 GAS）");
         setStatus("已從 Google Sheet 載入 " + records.length + " 筆資料。", "ok");
+        setInlineStatus(connectionInlineStatus, "讀取完成。", "ok");
+        setInlineStatus(tableInlineStatus, "表格已更新。", "ok");
       } catch (error) {
         setStatus("讀取 GAS 失敗：" + error.message, "error");
+        setInlineStatus(connectionInlineStatus, "讀取失敗：" + error.message, "error");
+        setInlineStatus(tableInlineStatus, "表格尚未更新。", "error");
       }
     }
 
@@ -1142,8 +1183,10 @@ Design:
           state.source = "upload";
           setSourceLabel("手動上傳 JSON");
           setStatus("已匯入本地 JSON。這份資料目前只在頁面中，不會自動寫回 Google Sheet。", "ok");
+          setInlineStatus(tableInlineStatus, "已載入本地 JSON。", "ok");
         } catch (error) {
           setStatus("匯入失敗：" + error.message, "error");
+          setInlineStatus(tableInlineStatus, "匯入失敗：" + error.message, "error");
         }
       };
       reader.readAsText(file, "utf-8");
@@ -1163,10 +1206,12 @@ Design:
       const normalized = ensureProtocol(newUrlInput.value);
       if (!normalized.url || !validateUrl(normalized.url)) {
         setStatus("無法新增：target_url 必須是合法網址。", "error");
+        setInlineStatus(addInlineStatus, "新增失敗：網址格式不正確。", "error");
         newUrlInput.focus();
         return;
       }
 
+      setInlineStatus(addInlineStatus, "正在寫入 Google Sheet...", "warn");
       callGas("create", {
         slug: slug,
         target_url: normalized.url,
@@ -1178,8 +1223,10 @@ Design:
         return loadFromGas();
       }).then(function() {
         setStatus("已新增 `" + slug + "` 到 Google Sheet。", "ok");
+        setInlineStatus(addInlineStatus, "已新增 `" + slug + "`。", "ok");
       }).catch(function(error) {
         setStatus("新增失敗：" + error.message, "error");
+        setInlineStatus(addInlineStatus, "新增失敗：" + error.message, "error");
       });
     });
 
@@ -1203,6 +1250,7 @@ Design:
 
       if (!normalized.url || !validateUrl(normalized.url)) {
         setStatus("無法儲存：target_url 必須是合法網址。", "error");
+        setInlineStatus(editInlineStatus, "儲存失敗：網址格式不正確。", "error");
         editUrlInput.focus();
         return;
       }
@@ -1210,9 +1258,11 @@ Design:
       const statusError = validateStatus(nextStatus);
       if (statusError) {
         setStatus("無法儲存：" + statusError, "error");
+        setInlineStatus(editInlineStatus, "儲存失敗：" + statusError, "error");
         return;
       }
 
+      setInlineStatus(editInlineStatus, "正在寫入 Google Sheet...", "warn");
       callGas("update", {
         slug: slug,
         target_url: normalized.url,
@@ -1229,8 +1279,10 @@ Design:
         return loadFromGas();
       }).then(function() {
         setStatus("已把 `" + slug + "` 更新到 Google Sheet。", "ok");
+        setInlineStatus(editInlineStatus, "已儲存 `" + slug + "`。", "ok");
       }).catch(function(error) {
         setStatus("儲存失敗：" + error.message, "error");
+        setInlineStatus(editInlineStatus, "儲存失敗：" + error.message, "error");
       });
     });
 
@@ -1265,6 +1317,7 @@ Design:
       state.selectedId = null;
       render();
       setStatus("已取消編輯。", "warn");
+      setInlineStatus(editInlineStatus, "已取消編輯。", "warn");
     });
 
     reloadButton.addEventListener("click", function() {
@@ -1276,22 +1329,28 @@ Design:
     });
 
     exportButton.addEventListener("click", function() {
+      setInlineStatus(tableInlineStatus, "正在匯出 snapshot...", "warn");
       callGas("export_snapshot").then(function(data) {
         const snapshot = data.snapshot || {};
         jsonPreview.value = JSON.stringify(snapshot, null, 2);
         const filename = buildTimestampedFilename();
         downloadTextFile(filename, JSON.stringify(snapshot, null, 2));
         setStatus("已從 GAS 匯出 snapshot，並下載 " + filename + "。", "ok");
+        setInlineStatus(tableInlineStatus, "已下載 " + filename + "。", "ok");
       }).catch(function(error) {
         setStatus("匯出 snapshot 失敗：" + error.message, "error");
+        setInlineStatus(tableInlineStatus, "匯出失敗：" + error.message, "error");
       });
     });
 
     backupButton.addEventListener("click", function() {
+      setInlineStatus(connectionInlineStatus, "正在執行 backup_now...", "warn");
       callGas("backup_now").then(function(data) {
         setStatus("backup_now 已完成，檔名：" + data.file_name, "ok");
+        setInlineStatus(connectionInlineStatus, "backup 完成：" + data.file_name, "ok");
       }).catch(function(error) {
         setStatus("backup_now 失敗：" + error.message, "error");
+        setInlineStatus(connectionInlineStatus, "backup 失敗：" + error.message, "error");
       });
     });
 
@@ -1339,6 +1398,7 @@ Design:
     gasUrlInput.value = DEFAULT_GAS_URL;
     sortFieldSelect.value = state.sortField;
     sortOrderButton.textContent = "目前：降冪";
+    clearInlineStatuses();
     loadDefaultJson();
   </script>
 </body>
